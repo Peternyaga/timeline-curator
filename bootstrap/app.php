@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\ResolveBearerTenant;
+use App\Http\Middleware\ResolveWebTenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,8 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'tenant.bearer' => \App\Http\Middleware\ResolveBearerTenant::class,
-            'tenant.web' => \App\Http\Middleware\ResolveWebTenant::class,
+            'tenant.bearer' => ResolveBearerTenant::class,
+            'tenant.web' => ResolveWebTenant::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
