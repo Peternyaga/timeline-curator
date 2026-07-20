@@ -1,0 +1,30 @@
+{
+  "name": "timeline-curator",
+  "version": "0.1.0",
+  "description": "Run a private, feedback-trained research loop against your Timeline account.",
+  "author": {
+    "name": "Peter Ngari",
+    "email": "nyashngari@gmail.com",
+    "url": "https://github.com/Peternyaga"
+  },
+  "homepage": "https://github.com/Peternyaga/timeline-curator",
+  "repository": "https://github.com/Peternyaga/timeline-curator",
+  "license": "MIT",
+  "keywords": ["curation", "research", "news", "feedback"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Timeline Curator",
+    "shortDescription": "Research and update your private evidence-backed feed.",
+    "longDescription": "Connects Codex to your independently authenticated Timeline account, learns its explicit feedback policy, researches the web, and publishes validated story clusters.",
+    "developerName": "Peter Ngari",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write", "Web research"],
+    "defaultPrompt": [
+      "Run my Timeline curation cycle now.",
+      "Explain my current curation policy.",
+      "Research my topics and publish only high-confidence stories."
+    ],
+    "brandColor": "#173F2B"
+  },
+  "mcpServers": "./.mcp.json"
+}

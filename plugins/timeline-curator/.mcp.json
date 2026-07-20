@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "timeline": {
+      "type": "http",
+      "url": "https://timeline.example.com/mcp",
+      "auth": "oauth",
+      "scopes": [
+        "read:curation-context",
+        "write:curation-runs",
+        "write:story-batches"
+      ],
+      "oauth_resource": "https://timeline.example.com/mcp",
+      "tool_timeout_sec": 120
+    }
+  }
+}
