@@ -33,6 +33,7 @@ class TenantIsolationTest extends TestCase
 
     public function test_web_tenant_context_is_taken_from_authenticated_user(): void
     {
+        $this->withoutVite();
         $user = User::factory()->create();
         $this->actingAs($user)->get('/timeline')->assertOk();
     }
