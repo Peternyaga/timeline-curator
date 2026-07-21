@@ -15,6 +15,7 @@ $frontendPath = Join-Path $temporaryRoot 'frontend'
 $archivePath = Join-Path $temporaryRoot 'source.zip'
 $releasePath = Join-Path $resolvedOutput 'curator-vumbualabs-directadmin.zip'
 $secretsPath = Join-Path $resolvedOutput 'curator-vumbualabs-deployment-secrets.txt'
+$utf8WithoutBom = New-Object Text.UTF8Encoding($false)
 
 function New-RandomBytes([int]$ByteCount) {
     $bytes = [byte[]]::new($ByteCount)
@@ -113,7 +114,7 @@ QUEUE_CONNECTION=sync
 FILESYSTEM_DISK=local
 MAIL_MAILER=log
 "@
-    Set-Content -LiteralPath (Join-Path $stagingPath '.env') -Value $productionEnvironment -Encoding utf8 -NoNewline
+    [IO.File]::WriteAllText((Join-Path $stagingPath '.env'), $productionEnvironment, $utf8WithoutBom)
 
     New-Item -ItemType Directory -Path $resolvedOutput -Force | Out-Null
     if (Test-Path -LiteralPath $releasePath) { Remove-Item -Force -LiteralPath $releasePath }
@@ -133,7 +134,7 @@ One-time installer token: $installerToken
 
 Keep this file private. After installation, set WEB_INSTALLER_ENABLED=false and remove WEB_INSTALLER_TOKEN_HASH from the server .env file.
 "@
-    Set-Content -LiteralPath $secretsPath -Value $deploymentSecrets -Encoding utf8 -NoNewline
+    [IO.File]::WriteAllText($secretsPath, $deploymentSecrets, $utf8WithoutBom)
 
     Write-Output "Release: $releasePath"
     Write-Output "Secrets: $secretsPath"
