@@ -6,6 +6,9 @@ use App\Curation\CurationTools;
 use GuzzleHttp\Psr7\ServerRequest;
 use Illuminate\Http\Request;
 use Mcp\Server;
+use Mcp\Server\Transport\Http\Middleware\CorsMiddleware;
+use Mcp\Server\Transport\Http\Middleware\DnsRebindingProtectionMiddleware;
+use Mcp\Server\Transport\Http\Middleware\ProtocolVersionMiddleware;
 use Mcp\Server\Transport\StreamableHttpTransport;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -51,7 +54,11 @@ class McpController extends Controller
             $request->getContent(),
             $request->getProtocolVersion(),
         );
-        $psrResponse = $server->run(new StreamableHttpTransport($psrRequest));
+        $psrResponse = $server->run(new StreamableHttpTransport($psrRequest, middleware: [
+            new CorsMiddleware,
+            new DnsRebindingProtectionMiddleware(config('mcp.allowed_hosts')),
+            new ProtocolVersionMiddleware,
+        ]));
 
         return response((string) $psrResponse->getBody(), $psrResponse->getStatusCode(), $psrResponse->getHeaders());
     }

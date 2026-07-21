@@ -42,4 +42,53 @@ class McpAuthenticationTest extends TestCase
         $this->assertSame($user->tenant_id, $user->tenant->id);
         $this->assertDatabaseCount('tenants', 1);
     }
+
+    public function test_mcp_accepts_the_configured_application_host(): void
+    {
+        config()->set('mcp.allowed_hosts', ['curator.vumbualabs.com']);
+        $this->bindValidTokenVerifier();
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer valid-token',
+        ])->postJson('http://curator.vumbualabs.com/mcp', $this->initializePayload())
+            ->assertOk()
+            ->assertJsonPath('result.serverInfo.name', 'Timeline Curator');
+    }
+
+    public function test_mcp_rejects_an_unconfigured_host(): void
+    {
+        config()->set('mcp.allowed_hosts', ['curator.vumbualabs.com']);
+        $this->bindValidTokenVerifier();
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer valid-token',
+        ])->postJson('http://attacker.example/mcp', $this->initializePayload())
+            ->assertForbidden()
+            ->assertSeeText('Invalid Host header');
+    }
+
+    private function bindValidTokenVerifier(): void
+    {
+        $this->app->bind(TokenVerifier::class, fn () => new class implements TokenVerifier
+        {
+            public function verify(string $token): array
+            {
+                return ['sub' => 'auth0|host-test', 'scope' => 'read:curation-context'];
+            }
+        });
+    }
+
+    private function initializePayload(): array
+    {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'initialize',
+            'params' => [
+                'protocolVersion' => '2025-06-18',
+                'capabilities' => new \stdClass,
+                'clientInfo' => ['name' => 'test-client', 'version' => '1.0.0'],
+            ],
+        ];
+    }
 }

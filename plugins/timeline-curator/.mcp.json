@@ -9,7 +9,6 @@
         "write:curation-runs",
         "write:story-batches"
       ],
-      "oauth_resource": "https://curator.vumbualabs.com/mcp",
       "tool_timeout_sec": 120
     }
   }
