@@ -51,6 +51,9 @@ class ResolveBearerTenant
     private function unauthorized(string $message): Response
     {
         return response()->json(['error' => 'unauthorized', 'message' => $message], 401)
-            ->header('WWW-Authenticate', 'Bearer');
+            ->header(
+                'WWW-Authenticate',
+                sprintf('Bearer resource_metadata="%s"', url('/.well-known/oauth-protected-resource/mcp')),
+            );
     }
 }

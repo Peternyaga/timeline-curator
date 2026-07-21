@@ -13,7 +13,18 @@ class McpAuthenticationTest extends TestCase
 
     public function test_mcp_requires_bearer_authentication(): void
     {
-        $this->postJson('/mcp', [])->assertUnauthorized()->assertHeader('WWW-Authenticate', 'Bearer');
+        $this->postJson('/mcp', [])->assertUnauthorized()->assertHeader(
+            'WWW-Authenticate',
+            'Bearer resource_metadata="http://localhost/.well-known/oauth-protected-resource/mcp"',
+        );
+    }
+
+    public function test_mcp_exposes_path_aware_protected_resource_metadata(): void
+    {
+        $this->getJson('/.well-known/oauth-protected-resource/mcp')
+            ->assertOk()
+            ->assertJsonPath('resource', 'http://localhost/mcp')
+            ->assertJsonStructure(['authorization_servers', 'bearer_methods_supported', 'scopes_supported']);
     }
 
     public function test_valid_subject_is_provisioned_into_its_own_tenant(): void

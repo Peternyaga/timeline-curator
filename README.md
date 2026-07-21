@@ -27,7 +27,7 @@ npm run build
 php artisan serve
 ```
 
-Set a MySQL connection and the five `AUTH0_*` values in `.env`. See [Auth0 configuration](docs/auth0.md) and [deployment notes](docs/deployment.md).
+Set a MySQL connection and the five `AUTH0_*` values in `.env`. See [Auth0 configuration](docs/auth0.md) and the [no-SSH DirectAdmin deployment guide](docs/deployment.md).
 
 Run the checks:
 
@@ -41,7 +41,9 @@ Some Windows PHP distributions omit PDO SQLite. In that case enable `pdo_sqlite`
 
 ## Codex plugin
 
-Before installing the private-beta plugin, replace `timeline.example.com` in `plugins/timeline-curator/.mcp.json` with the deployed HTTPS host. Install the repo-local marketplace, install `timeline-curator`, authenticate its MCP server as the current user, and create personal schedules using the prompt in `plugins/timeline-curator/assets/scheduled-task-prompt.md`.
+The private-beta plugin is configured for `https://curator.vumbualabs.com/mcp`. Install the repo-local marketplace, install `timeline-curator`, authenticate its MCP server as the current user, and create personal schedules using the prompt in `plugins/timeline-curator/assets/scheduled-task-prompt.md`.
+
+For DirectAdmin hosting without SSH, build the complete upload ZIP locally with `scripts/build-directadmin-release.ps1`. It includes production dependencies, compiled assets, generated application secrets, and the disabled-by-default one-time database installer.
 
 Recommended schedules are 07:00 and 18:00 in each user's timezone. Each run is a fresh user-owned task; the Timeline policy API is the durable learning state.
 

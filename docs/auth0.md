@@ -3,10 +3,10 @@
 Create two Auth0 resources in the same tenant:
 
 1. A Regular Web Application for browser login. Enable Authorization Code with PKCE and configure:
-   - callback: `https://<timeline-host>/auth/callback`
-   - logout: `https://<timeline-host>/`
-   - web origin: `https://<timeline-host>`
-2. An API whose identifier exactly matches `AUTH0_AUDIENCE` (recommended: `https://<timeline-host>/mcp`). Enable RBAC permissions in access tokens.
+   - callback: `https://curator.vumbualabs.com/auth/callback`
+   - logout: `https://curator.vumbualabs.com/`
+   - web origin: `https://curator.vumbualabs.com`
+2. An API whose identifier exactly matches `AUTH0_AUDIENCE`: `https://curator.vumbualabs.com/mcp`. Enable RBAC permissions in access tokens.
 
 Add these API permissions:
 
@@ -23,7 +23,7 @@ AUTH0_DOMAIN=tenant-region.auth0.com
 AUTH0_CLIENT_ID=<regular-web-app-client-id>
 AUTH0_CLIENT_SECRET=<regular-web-app-client-secret>
 AUTH0_COOKIE_SECRET=<64-or-more-random-hex-characters>
-AUTH0_AUDIENCE=https://<timeline-host>/mcp
+AUTH0_AUDIENCE=https://curator.vumbualabs.com/mcp
 ```
 
 The protected-resource metadata is published at `/.well-known/oauth-protected-resource`. The MCP plugin requests all three permissions, but the server checks the permission required by each tool independently.

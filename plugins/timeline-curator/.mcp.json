@@ -2,14 +2,14 @@
   "mcpServers": {
     "timeline": {
       "type": "http",
-      "url": "https://timeline.example.com/mcp",
+      "url": "https://curator.vumbualabs.com/mcp",
       "auth": "oauth",
       "scopes": [
         "read:curation-context",
         "write:curation-runs",
         "write:story-batches"
       ],
-      "oauth_resource": "https://timeline.example.com/mcp",
+      "oauth_resource": "https://curator.vumbualabs.com/mcp",
       "tool_timeout_sec": 120
     }
   }
