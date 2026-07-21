@@ -104,6 +104,21 @@ class McpAuthenticationTest extends TestCase
             'jsonrpc' => '2.0',
             'method' => 'notifications/initialized',
         ])->assertAccepted();
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer valid-token',
+            'Mcp-Session-Id' => $sessionId,
+        ])->postJson('http://curator.vumbualabs.com/mcp', [
+            'jsonrpc' => '2.0',
+            'id' => 2,
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'get_curation_context',
+                'arguments' => new \stdClass,
+            ],
+        ])->assertOk()
+            ->assertJsonPath('result.isError', false)
+            ->assertJsonPath('result.structuredContent.feedback_summary.sample_size', 0);
     }
 
     private function bindValidTokenVerifier(): void
