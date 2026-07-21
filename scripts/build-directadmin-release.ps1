@@ -16,10 +16,15 @@ $archivePath = Join-Path $temporaryRoot 'source.zip'
 $releasePath = Join-Path $resolvedOutput 'curator-vumbualabs-directadmin.zip'
 $secretsPath = Join-Path $resolvedOutput 'curator-vumbualabs-deployment-secrets.txt'
 
-function New-RandomValue([int]$ByteCount) {
+function New-RandomBytes([int]$ByteCount) {
     $bytes = [byte[]]::new($ByteCount)
-    [Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
-    return [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+    $generator = [Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $generator.GetBytes($bytes) } finally { $generator.Dispose() }
+    return $bytes
+}
+
+function New-RandomValue([int]$ByteCount) {
+    return [Convert]::ToBase64String((New-RandomBytes $ByteCount)).TrimEnd('=').Replace('+', '-').Replace('/', '_')
 }
 
 Push-Location $repositoryRoot
@@ -58,10 +63,12 @@ try {
         if (Test-Path -LiteralPath $path) { Remove-Item -Force -LiteralPath $path }
     }
 
-    $appKey = 'base64:' + [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
-    $cookieSecret = [Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(32)).ToLowerInvariant()
+    $appKey = 'base64:' + [Convert]::ToBase64String((New-RandomBytes 32))
+    $cookieSecret = ([BitConverter]::ToString((New-RandomBytes 32))).Replace('-', '').ToLowerInvariant()
     $installerToken = New-RandomValue 32
-    $installerHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($installerToken))).ToLowerInvariant()
+    $sha256 = [Security.Cryptography.SHA256]::Create()
+    try { $installerHashBytes = $sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes($installerToken)) } finally { $sha256.Dispose() }
+    $installerHash = ([BitConverter]::ToString($installerHashBytes)).Replace('-', '').ToLowerInvariant()
 
     $productionEnvironment = @"
 APP_NAME="Timeline Curator"
