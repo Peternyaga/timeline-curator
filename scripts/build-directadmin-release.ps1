@@ -118,8 +118,8 @@ MAIL_MAILER=log
 
     New-Item -ItemType Directory -Path $resolvedOutput -Force | Out-Null
     if (Test-Path -LiteralPath $releasePath) { Remove-Item -Force -LiteralPath $releasePath }
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [IO.Compression.ZipFile]::CreateFromDirectory($stagingPath, $releasePath, [IO.Compression.CompressionLevel]::Optimal, $false)
+    tar.exe -a -c -f $releasePath -C $stagingPath .
+    if ($LASTEXITCODE -ne 0) { throw 'Unable to create the release ZIP.' }
     $checksum = (Get-FileHash -Algorithm SHA256 -LiteralPath $releasePath).Hash.ToLowerInvariant()
 
     $deploymentSecrets = @"
