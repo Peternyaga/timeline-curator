@@ -11,6 +11,7 @@ $resolvedOutput = if ([IO.Path]::IsPathRooted($OutputDirectory)) {
 }
 $temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) ('timeline-curator-release-' + [Guid]::NewGuid().ToString('N'))
 $stagingPath = Join-Path $temporaryRoot 'app'
+$frontendPath = Join-Path $temporaryRoot 'frontend'
 $archivePath = Join-Path $temporaryRoot 'source.zip'
 $releasePath = Join-Path $resolvedOutput 'curator-vumbualabs-directadmin.zip'
 $secretsPath = Join-Path $resolvedOutput 'curator-vumbualabs-deployment-secrets.txt'
@@ -27,10 +28,16 @@ try {
         throw 'Commit or stash repository changes before building a deployment release.'
     }
 
+    New-Item -ItemType Directory -Path $frontendPath -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'package.json'), (Join-Path $repositoryRoot 'package-lock.json'), (Join-Path $repositoryRoot 'vite.config.js') -Destination $frontendPath
+    Copy-Item -Recurse -LiteralPath (Join-Path $repositoryRoot 'resources') -Destination (Join-Path $frontendPath 'resources')
+
+    Push-Location $frontendPath
     npm ci --no-audit --no-fund
     if ($LASTEXITCODE -ne 0) { throw 'npm ci failed.' }
     npm run build
     if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' }
+    Pop-Location
 
     New-Item -ItemType Directory -Path $stagingPath -Force | Out-Null
     git archive --format=zip --output=$archivePath HEAD
@@ -40,7 +47,7 @@ try {
     composer install --working-dir=$stagingPath --no-dev --classmap-authoritative --no-interaction --prefer-dist
     if ($LASTEXITCODE -ne 0) { throw 'Production Composer install failed.' }
 
-    Copy-Item -Recurse -Force -LiteralPath (Join-Path $repositoryRoot 'public\build') -Destination (Join-Path $stagingPath 'public\build')
+    Copy-Item -Recurse -Force -LiteralPath (Join-Path $frontendPath 'public\build') -Destination (Join-Path $stagingPath 'public\build')
 
     @('.agents', '.github', 'docs', 'plugins', 'scripts', 'tests') | ForEach-Object {
         $path = Join-Path $stagingPath $_
