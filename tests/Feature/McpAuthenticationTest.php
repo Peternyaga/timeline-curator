@@ -5,11 +5,28 @@ namespace Tests\Feature;
 use App\Auth\TokenVerifier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class McpAuthenticationTest extends TestCase
 {
     use RefreshDatabase;
+
+    private string $mcpSessionPath;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->mcpSessionPath = storage_path('framework/testing/mcp-sessions');
+        File::deleteDirectory($this->mcpSessionPath);
+        config()->set('mcp.session_path', $this->mcpSessionPath);
+    }
+
+    protected function tearDown(): void
+    {
+        File::deleteDirectory($this->mcpSessionPath);
+        parent::tearDown();
+    }
 
     public function test_mcp_requires_bearer_authentication(): void
     {
@@ -65,6 +82,28 @@ class McpAuthenticationTest extends TestCase
         ])->postJson('http://attacker.example/mcp', $this->initializePayload())
             ->assertForbidden()
             ->assertSeeText('Invalid Host header');
+    }
+
+    public function test_mcp_session_survives_the_initialized_follow_up_request(): void
+    {
+        config()->set('mcp.allowed_hosts', ['curator.vumbualabs.com']);
+        $this->bindValidTokenVerifier();
+
+        $initialize = $this->withHeaders([
+            'Authorization' => 'Bearer valid-token',
+        ])->postJson('http://curator.vumbualabs.com/mcp', $this->initializePayload())
+            ->assertOk();
+
+        $sessionId = $initialize->headers->get('Mcp-Session-Id');
+        $this->assertNotEmpty($sessionId);
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer valid-token',
+            'Mcp-Session-Id' => $sessionId,
+        ])->postJson('http://curator.vumbualabs.com/mcp', [
+            'jsonrpc' => '2.0',
+            'method' => 'notifications/initialized',
+        ])->assertAccepted();
     }
 
     private function bindValidTokenVerifier(): void

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Curation\CurationTools;
+use App\Tenancy\TenantContext;
 use GuzzleHttp\Psr7\ServerRequest;
 use Illuminate\Http\Request;
 use Mcp\Server;
+use Mcp\Server\Session\FileSessionStore;
 use Mcp\Server\Transport\Http\Middleware\CorsMiddleware;
 use Mcp\Server\Transport\Http\Middleware\DnsRebindingProtectionMiddleware;
 use Mcp\Server\Transport\Http\Middleware\ProtocolVersionMiddleware;
@@ -14,10 +16,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 class McpController extends Controller
 {
-    public function __invoke(Request $request, CurationTools $tools): Response
+    public function __invoke(Request $request, CurationTools $tools, TenantContext $tenant): Response
     {
         $server = Server::builder()
             ->setServerInfo('Timeline Curator', '0.1.0')
+            ->setSession(new FileSessionStore(
+                rtrim((string) config('mcp.session_path'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$tenant->id(),
+                (int) config('mcp.session_ttl'),
+            ))
             ->addTool([$tools, 'getCurationContext'], 'get_curation_context', description: 'Retrieve the authenticated user’s current topics, directives, feedback policy, and context version.', inputSchema: ['type' => 'object'])
             ->addTool([$tools, 'beginCurationRun'], 'begin_curation_run', description: 'Start a tenant-scoped curation run and record its exact search queries.', inputSchema: [
                 'type' => 'object',
