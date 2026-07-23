@@ -52,4 +52,6 @@ Build an update archive that deliberately excludes `.env`:
 
 Upload `dist/curator-vumbualabs-update.zip` to `/domains/curator.vumbualabs.com/app` and extract it over the existing application. The archive includes production dependencies and compiled frontend assets but cannot overwrite the production database credentials, application key, sessions, or OAuth token configuration because it contains no `.env` file.
 
-The mobile-first feed and policy update has no database migration. For a future release that includes migrations, use the one-time web installer procedure after uploading.
+After extraction, open `https://curator.vumbualabs.com/deployment/install` and enter the one-time token from `dist/curator-vumbualabs-update-token.txt`. The update package stores only the token hash outside the public document root. A successful migration deletes that hash automatically, closes the update endpoint, and preserves the existing `.env`, tenants, users, OAuth credentials, stories, and feedback.
+
+If DirectAdmin Terminal is available, `php artisan migrate --force` from the application directory is an equivalent migration path. Do not activate schema-dependent application code without completing one of these migration steps.

@@ -16,17 +16,20 @@ class DeploymentInstallerTest extends TestCase
 
     private string $inProgressPath;
 
+    private string $updateTokenHashPath;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->completedPath = storage_path('app/deployment-installed.lock');
         $this->inProgressPath = storage_path('app/deployment-installing.lock');
-        File::delete([$this->completedPath, $this->inProgressPath]);
+        $this->updateTokenHashPath = storage_path('app/deployment-update-token-hash');
+        File::delete([$this->completedPath, $this->inProgressPath, $this->updateTokenHashPath]);
     }
 
     protected function tearDown(): void
     {
-        File::delete([$this->completedPath, $this->inProgressPath]);
+        File::delete([$this->completedPath, $this->inProgressPath, $this->updateTokenHashPath]);
         parent::tearDown();
     }
 
@@ -77,5 +80,25 @@ class DeploymentInstallerTest extends TestCase
 
         $this->assertTrue(Hash::check('new-local-password', $user->fresh()->password));
         $this->assertSame($user->tenant_id, $user->fresh()->tenant_id);
+    }
+
+    public function test_one_use_update_token_runs_migrations_after_initial_install(): void
+    {
+        config()->set('deployment.web_installer_enabled', false);
+        File::put($this->completedPath, '{}');
+        File::put($this->updateTokenHashPath, hash('sha256', 'update-token'));
+
+        $this->get('/deployment/install')
+            ->assertOk()
+            ->assertSee('Update Timeline Curator')
+            ->assertDontSee('Existing owner migration');
+
+        $this->post('/deployment/install', ['token' => 'update-token'])
+            ->assertOk()
+            ->assertSee('Database update complete');
+
+        $this->assertFileDoesNotExist($this->updateTokenHashPath);
+        $this->assertFileExists($this->completedPath);
+        $this->get('/deployment/install')->assertNotFound();
     }
 }

@@ -17,6 +17,7 @@ $archivePath = Join-Path $temporaryRoot 'source.zip'
 $releaseName = if ($ExistingDeployment) { 'curator-vumbualabs-update.zip' } else { 'curator-vumbualabs-directadmin.zip' }
 $releasePath = Join-Path $resolvedOutput $releaseName
 $secretsPath = Join-Path $resolvedOutput 'curator-vumbualabs-deployment-secrets.txt'
+$updateTokenPath = Join-Path $resolvedOutput 'curator-vumbualabs-update-token.txt'
 $utf8WithoutBom = New-Object Text.UTF8Encoding($false)
 
 function New-RandomBytes([int]$ByteCount) {
@@ -116,6 +117,17 @@ MAIL_MAILER=log
 "@
         [IO.File]::WriteAllText((Join-Path $stagingPath '.env'), $productionEnvironment, $utf8WithoutBom)
     }
+    else {
+        $installerToken = New-RandomValue 32
+        $sha256 = [Security.Cryptography.SHA256]::Create()
+        try { $installerHashBytes = $sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes($installerToken)) } finally { $sha256.Dispose() }
+        $installerHash = ([BitConverter]::ToString($installerHashBytes)).Replace('-', '').ToLowerInvariant()
+        [IO.File]::WriteAllText(
+            (Join-Path $stagingPath 'storage\app\deployment-update-token-hash'),
+            $installerHash,
+            $utf8WithoutBom
+        )
+    }
 
     New-Item -ItemType Directory -Path $resolvedOutput -Force | Out-Null
     if (Test-Path -LiteralPath $releasePath) { Remove-Item -Force -LiteralPath $releasePath }
@@ -138,10 +150,24 @@ Keep this file private. After installation, set WEB_INSTALLER_ENABLED=false and 
 "@
         [IO.File]::WriteAllText($secretsPath, $deploymentSecrets, $utf8WithoutBom)
     }
+    else {
+        $updateTokenInstructions = @"
+Timeline Curator existing-deployment update
+
+Release: $releasePath
+SHA-256: $checksum
+Migration URL: https://curator.vumbualabs.com/deployment/install
+One-time update token: $installerToken
+
+Upload and extract the release before opening the migration URL. The server stores only this token's hash and deletes it automatically after a successful migration.
+"@
+        [IO.File]::WriteAllText($updateTokenPath, $updateTokenInstructions, $utf8WithoutBom)
+    }
 
     Write-Output "Release: $releasePath"
     if ($ExistingDeployment) {
         Write-Output 'Mode: existing deployment (.env excluded)'
+        Write-Output "Update token: $updateTokenPath"
     }
     else {
         Write-Output "Secrets: $secretsPath"
