@@ -41,3 +41,15 @@ For the existing production database, the migration preserves every tenant, topi
 5. Reinstall Timeline Curator, approve it on the Timeline page, and run one on-demand cycle.
 
 No hosting cron, queue worker, Auth0 tenant, terminal, or SSH is required. Scheduled curation remains a user-owned Codex task.
+
+## Updating an existing installation
+
+Build an update archive that deliberately excludes `.env`:
+
+```powershell
+.\scripts\build-directadmin-release.ps1 -ExistingDeployment
+```
+
+Upload `dist/curator-vumbualabs-update.zip` to `/domains/curator.vumbualabs.com/app` and extract it over the existing application. The archive includes production dependencies and compiled frontend assets but cannot overwrite the production database credentials, application key, sessions, or OAuth token configuration because it contains no `.env` file.
+
+The mobile-first feed and policy update has no database migration. For a future release that includes migrations, use the one-time web installer procedure after uploading.

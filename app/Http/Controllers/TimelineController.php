@@ -2,18 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Directive;
 use App\Models\StoryCluster;
-use App\Models\Topic;
+use Illuminate\Support\Carbon;
 
 class TimelineController extends Controller
 {
     public function __invoke()
     {
+        $stories = StoryCluster::query()
+            ->with(['sources', 'feedback'])
+            ->latest('published_at')
+            ->latest('id')
+            ->paginate(20);
+        $latest = $stories->currentPage() === 1 ? $stories->getCollection()->first() : null;
+        $liveCursor = $stories->currentPage() === 1 ? [
+            'published_at' => ($latest?->published_at ?? Carbon::createFromTimestampUTC(0))->toIso8601String(),
+            'id' => $latest?->id ?? '00000000000000000000000000',
+        ] : null;
+
         return view('timeline', [
-            'stories' => StoryCluster::query()->with(['sources', 'feedback'])->latest('published_at')->paginate(20),
-            'topics' => Topic::query()->orderBy('name')->get(),
-            'directives' => Directive::query()->latest()->get(),
+            'stories' => $stories,
+            'liveCursor' => $liveCursor,
             'semanticTags' => ['Great source', 'More like this', 'SEO spam', 'Outdated', 'Paywalled'],
         ]);
     }

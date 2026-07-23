@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\FeedbackEvent;
 use App\Models\StoryCluster;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class FeedbackController extends Controller
 {
-    public function store(Request $request, string $story): RedirectResponse
+    public function store(Request $request, string $story): JsonResponse|RedirectResponse
     {
         $story = StoryCluster::query()->findOrFail($story);
         $data = $request->validate([
@@ -26,6 +27,15 @@ class FeedbackController extends Controller
             $data,
         );
 
-        return back()->with('status', 'Feedback saved.');
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Feedback saved.',
+                'story_id' => $story->id,
+            ]);
+        }
+
+        return redirect()
+            ->to(route('timeline').'#story-'.$story->id)
+            ->with('status', 'Feedback saved.');
     }
 }

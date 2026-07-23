@@ -1,5 +1,6 @@
 param(
-    [string]$OutputDirectory = (Join-Path $PSScriptRoot '..\dist')
+    [string]$OutputDirectory = (Join-Path $PSScriptRoot '..\dist'),
+    [switch]$ExistingDeployment
 )
 
 $ErrorActionPreference = 'Stop'
@@ -13,7 +14,8 @@ $temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) ('timeline-curator-release
 $stagingPath = Join-Path $temporaryRoot 'app'
 $frontendPath = Join-Path $temporaryRoot 'frontend'
 $archivePath = Join-Path $temporaryRoot 'source.zip'
-$releasePath = Join-Path $resolvedOutput 'curator-vumbualabs-directadmin.zip'
+$releaseName = if ($ExistingDeployment) { 'curator-vumbualabs-update.zip' } else { 'curator-vumbualabs-directadmin.zip' }
+$releasePath = Join-Path $resolvedOutput $releaseName
 $secretsPath = Join-Path $resolvedOutput 'curator-vumbualabs-deployment-secrets.txt'
 $utf8WithoutBom = New-Object Text.UTF8Encoding($false)
 
@@ -64,13 +66,14 @@ try {
         if (Test-Path -LiteralPath $path) { Remove-Item -Force -LiteralPath $path }
     }
 
-    $appKey = 'base64:' + [Convert]::ToBase64String((New-RandomBytes 32))
-    $installerToken = New-RandomValue 32
-    $sha256 = [Security.Cryptography.SHA256]::Create()
-    try { $installerHashBytes = $sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes($installerToken)) } finally { $sha256.Dispose() }
-    $installerHash = ([BitConverter]::ToString($installerHashBytes)).Replace('-', '').ToLowerInvariant()
+    if (-not $ExistingDeployment) {
+        $appKey = 'base64:' + [Convert]::ToBase64String((New-RandomBytes 32))
+        $installerToken = New-RandomValue 32
+        $sha256 = [Security.Cryptography.SHA256]::Create()
+        try { $installerHashBytes = $sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes($installerToken)) } finally { $sha256.Dispose() }
+        $installerHash = ([BitConverter]::ToString($installerHashBytes)).Replace('-', '').ToLowerInvariant()
 
-    $productionEnvironment = @"
+        $productionEnvironment = @"
 APP_NAME="Timeline Curator"
 APP_ENV=production
 APP_KEY=$appKey
@@ -111,7 +114,8 @@ QUEUE_CONNECTION=sync
 FILESYSTEM_DISK=local
 MAIL_MAILER=log
 "@
-    [IO.File]::WriteAllText((Join-Path $stagingPath '.env'), $productionEnvironment, $utf8WithoutBom)
+        [IO.File]::WriteAllText((Join-Path $stagingPath '.env'), $productionEnvironment, $utf8WithoutBom)
+    }
 
     New-Item -ItemType Directory -Path $resolvedOutput -Force | Out-Null
     if (Test-Path -LiteralPath $releasePath) { Remove-Item -Force -LiteralPath $releasePath }
@@ -119,7 +123,8 @@ MAIL_MAILER=log
     if ($LASTEXITCODE -ne 0) { throw 'Unable to create the release ZIP.' }
     $checksum = (Get-FileHash -Algorithm SHA256 -LiteralPath $releasePath).Hash.ToLowerInvariant()
 
-    $deploymentSecrets = @"
+    if (-not $ExistingDeployment) {
+        $deploymentSecrets = @"
 Timeline Curator DirectAdmin deployment
 
 Release: $releasePath
@@ -131,10 +136,16 @@ One-time installer token: $installerToken
 
 Keep this file private. After installation, set WEB_INSTALLER_ENABLED=false and remove WEB_INSTALLER_TOKEN_HASH from the server .env file.
 "@
-    [IO.File]::WriteAllText($secretsPath, $deploymentSecrets, $utf8WithoutBom)
+        [IO.File]::WriteAllText($secretsPath, $deploymentSecrets, $utf8WithoutBom)
+    }
 
     Write-Output "Release: $releasePath"
-    Write-Output "Secrets: $secretsPath"
+    if ($ExistingDeployment) {
+        Write-Output 'Mode: existing deployment (.env excluded)'
+    }
+    else {
+        Write-Output "Secrets: $secretsPath"
+    }
     Write-Output "SHA-256: $checksum"
 }
 finally {

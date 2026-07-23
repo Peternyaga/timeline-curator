@@ -47,6 +47,8 @@ Follow the [external tester setup guide](docs/external-testing.md) for exact Cod
 
 For DirectAdmin hosting without SSH, build the complete upload ZIP locally with `scripts/build-directadmin-release.ps1`. It includes production dependencies, compiled assets, generated application secrets, and the disabled-by-default one-time database installer.
 
+For an already-running installation, use `scripts/build-directadmin-release.ps1 -ExistingDeployment`. The resulting update ZIP excludes `.env`, preserving the live application key, database credentials, sessions, and OAuth tokens.
+
 Recommended schedules are 07:00 and 18:00 in each user's timezone. Each run is a fresh user-owned task; the Timeline policy API is the durable learning state.
 
 ## Security invariants
