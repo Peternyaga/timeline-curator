@@ -1,7 +1,7 @@
 {
-  "name": "personal",
+  "name": "vumbua-labs",
   "interface": {
-    "displayName": "Personal"
+    "displayName": "Vumbua Labs"
   },
   "plugins": [
     {

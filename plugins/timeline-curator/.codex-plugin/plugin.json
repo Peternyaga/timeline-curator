@@ -1,6 +1,6 @@
 {
   "name": "timeline-curator",
-  "version": "0.1.0+codex.20260723082754",
+  "version": "0.1.0+codex.20260723150647",
   "description": "Run a private, feedback-trained research loop against your Timeline account.",
   "author": {
     "name": "Peter Ngari",
@@ -33,7 +33,9 @@
       "Explain my current curation policy.",
       "Research my topics and publish only high-confidence stories."
     ],
-    "brandColor": "#173F2B"
+    "brandColor": "#173F2B",
+    "composerIcon": "./assets/timeline-curator-icon.png",
+    "logo": "./assets/timeline-curator-icon.png"
   },
   "mcpServers": "./.mcp.json"
 }

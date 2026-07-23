@@ -13,7 +13,7 @@ The application never calls an LLM API to scrape, rank, summarize, or judge cont
 - Tenant-scoped models plus composite tenant foreign keys for defense in depth
 - Story clusters with exactly three technical bullets and mapped citations
 - Explicit 1–5 relevance and depth feedback, controlled tags, and comments
-- Repo-local private-beta Codex plugin in `plugins/timeline-curator`
+- Public-beta Codex plugin in `plugins/timeline-curator`
 
 ## Local setup
 
@@ -41,7 +41,9 @@ Some Windows PHP distributions omit PDO SQLite. In that case enable `pdo_sqlite`
 
 ## Codex plugin
 
-The private-beta plugin is configured for `https://curator.vumbualabs.com/mcp`. Install the repo-local marketplace, install `timeline-curator`, authenticate its MCP server as the current user, and create personal schedules using the prompt in `plugins/timeline-curator/assets/scheduled-task-prompt.md`.
+The public-beta plugin is configured for `https://curator.vumbualabs.com/mcp`. External testers can add the GitHub marketplace, install `timeline-curator`, authenticate its MCP server as their own Timeline user, and run or schedule independent curation cycles.
+
+Follow the [external tester setup guide](docs/external-testing.md) for exact Codex Desktop, PowerShell, and shell commands. Personal schedules can use the prompt in `plugins/timeline-curator/assets/scheduled-task-prompt.md`.
 
 For DirectAdmin hosting without SSH, build the complete upload ZIP locally with `scripts/build-directadmin-release.ps1`. It includes production dependencies, compiled assets, generated application secrets, and the disabled-by-default one-time database installer.
 
