@@ -33,7 +33,7 @@ class TimelineUpdatesController extends Controller
         }
 
         $candidates = StoryCluster::query()
-            ->with(['sources', 'feedback'])
+            ->with(['sources', 'media', 'feedback'])
             ->where(function ($query) use ($after, $afterId): void {
                 $query->where('published_at', '>', $after)
                     ->orWhere(function ($query) use ($after, $afterId): void {
@@ -53,14 +53,12 @@ class TimelineUpdatesController extends Controller
             $story->published_at?->getTimestamp() ?? 0,
             $story->id,
         ]);
-        $semanticTags = ['Great source', 'More like this', 'SEO spam', 'Outdated', 'Paywalled'];
 
         return response()->json([
             'count' => $batch->count(),
             'html' => $renderedStories
                 ->map(fn (StoryCluster $story) => view('partials.story-card', [
                     'story' => $story,
-                    'semanticTags' => $semanticTags,
                 ])->render())
                 ->implode(''),
             'cursor' => $nextCursor ? [

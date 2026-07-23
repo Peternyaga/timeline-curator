@@ -12,6 +12,39 @@ use Throwable;
 
 class CurationIngestionService
 {
+    private const FEEDBACK_SIGNALS = [
+        'more_like_this',
+        'less_like_this',
+        'good_source',
+        'bad_source',
+        'useful_depth',
+        'wrong_depth',
+        'timely',
+        'stale',
+        'novel',
+        'already_known',
+        'accessible',
+        'inaccessible',
+    ];
+
+    private const POSITIVE_SIGNALS = [
+        'more_like_this',
+        'good_source',
+        'useful_depth',
+        'timely',
+        'novel',
+        'accessible',
+    ];
+
+    private const CORRECTIVE_SIGNALS = [
+        'less_like_this',
+        'bad_source',
+        'wrong_depth',
+        'stale',
+        'already_known',
+        'inaccessible',
+    ];
+
     public function __construct(private CurationPolicyService $policy) {}
 
     public function begin(string $contextVersion, array $queries, ?string $skillVersion = null): AgentRun
@@ -95,11 +128,14 @@ class CurationIngestionService
         }
 
         $title = $this->text($input['title'] ?? null, 255, 'title');
-        $bullets = $input['technical_bullets'] ?? null;
-        if (! is_array($bullets) || count($bullets) !== 3) {
-            throw new CurationException('invalid_story', 'Exactly three technical bullets are required.');
+        $summaryPoints = $input['summary_points'] ?? $input['technical_bullets'] ?? null;
+        if (! is_array($summaryPoints) || count($summaryPoints) < 1 || count($summaryPoints) > 6) {
+            throw new CurationException('invalid_story', 'Provide between one and six summary points.');
         }
-        $bullets = array_map(fn ($bullet) => $this->text($bullet, 600, 'technical_bullet'), array_values($bullets));
+        $summaryPoints = array_map(
+            fn ($point) => $this->text($point, 600, 'summary_point'),
+            array_values($summaryPoints),
+        );
         $sources = $input['sources'] ?? null;
         if (! is_array($sources) || $sources === [] || count($sources) > 5) {
             throw new CurationException('invalid_source', 'Provide between one and five sources.');
@@ -108,10 +144,6 @@ class CurationIngestionService
         $normalizedSources = array_map(fn ($source) => $this->normalizeSource($source), $sources);
         if (collect($normalizedSources)->where('role', 'primary')->count() !== 1) {
             throw new CurationException('invalid_source', 'Exactly one primary source is required.');
-        }
-        $coveredBullets = collect($normalizedSources)->flatMap(fn ($source) => $source['supports_bullets'])->unique()->sort()->values()->all();
-        if ($coveredBullets !== [1, 2, 3]) {
-            throw new CurationException('invalid_source', 'The source evidence must collectively cover all three bullets.');
         }
         $sourceCount = StorySource::query()->whereHas('storyCluster', fn ($query) => $query->where('agent_run_id', $run->id))->count();
         if ($sourceCount + count($normalizedSources) > 50) {
@@ -134,18 +166,27 @@ class CurationIngestionService
             throw new CurationException('duplicate', 'A matching story cluster already exists.');
         }
 
-        return DB::transaction(function () use ($run, $clientId, $title, $bullets, $input, $fingerprint, $normalizedSources): StoryCluster {
+        $feedbackTags = $this->normalizeFeedbackTags($input['feedback_tags'] ?? null);
+        $media = $this->normalizeMedia($input['media'] ?? []);
+
+        return DB::transaction(function () use ($run, $clientId, $title, $summaryPoints, $input, $fingerprint, $normalizedSources, $feedbackTags, $media): StoryCluster {
             $cluster = StoryCluster::query()->create([
                 'agent_run_id' => $run->id,
                 'client_item_id' => $clientId,
                 'title' => $title,
-                'technical_bullets' => $bullets,
+                // Keep the legacy column populated while older plugin builds remain installed.
+                'technical_bullets' => $summaryPoints,
+                'summary_points' => $summaryPoints,
                 'why_it_matters' => isset($input['why_it_matters']) ? $this->text($input['why_it_matters'], 1200, 'why_it_matters') : null,
+                'feedback_tags' => $feedbackTags,
                 'fingerprint' => $fingerprint,
                 'published_at' => now(),
             ]);
             foreach ($normalizedSources as $source) {
                 $cluster->sources()->create($source);
+            }
+            foreach ($media as $item) {
+                $cluster->media()->create($item);
             }
 
             return $cluster;
@@ -158,19 +199,7 @@ class CurationIngestionService
         if (! is_array($source)) {
             throw new CurationException('invalid_source', 'Each source must be an object.');
         }
-        $url = trim((string) ($source['url'] ?? ''));
-        $parts = parse_url($url);
-        if (($parts['scheme'] ?? '') !== 'https' || empty($parts['host'])) {
-            throw new CurationException('invalid_source', 'Sources must use absolute HTTPS URLs.');
-        }
-        $domain = strtolower(rtrim($parts['host'], '.'));
-        if ($domain === 'localhost' || $domain === 'localhost.localdomain' || $this->isPrivateIp($domain)) {
-            throw new CurationException('invalid_source', 'Local and private-network source URLs are not allowed.');
-        }
-        $supports = $source['supports_bullets'] ?? [];
-        if (! is_array($supports) || $supports === [] || collect($supports)->contains(fn ($index) => ! in_array($index, [1, 2, 3], true))) {
-            throw new CurationException('invalid_source', 'Each source must cite one or more bullet numbers from 1 to 3.');
-        }
+        [$url, $domain] = $this->publicHttpsUrl($source['url'] ?? null, 'invalid_source', 'source.url');
 
         return [
             'title' => $this->text($source['title'] ?? null, 255, 'source.title'),
@@ -178,8 +207,136 @@ class CurationIngestionService
             'domain' => $domain,
             'role' => ($source['role'] ?? null) === 'primary' ? 'primary' : 'supporting',
             'published_at' => $source['published_at'] ?? null,
-            'supports_bullets' => array_values(array_unique($supports)),
+            'supports_bullets' => null,
         ];
+    }
+
+    /** @return list<array<string, string>>|null */
+    private function normalizeFeedbackTags(mixed $tags): ?array
+    {
+        // Legacy plugin builds did not send story-specific feedback tags.
+        if ($tags === null) {
+            return null;
+        }
+        if (! is_array($tags) || count($tags) < 4 || count($tags) > 6) {
+            throw new CurationException('invalid_feedback_tag', 'Provide between four and six feedback tags.');
+        }
+
+        $normalized = [];
+        foreach ($tags as $tag) {
+            if (! is_array($tag)) {
+                throw new CurationException('invalid_feedback_tag', 'Each feedback tag must be an object.');
+            }
+            $id = trim((string) ($tag['id'] ?? ''));
+            if (! preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $id) || strlen($id) > 64) {
+                throw new CurationException('invalid_feedback_tag', 'Feedback tag ids must be unique lower-case slugs of at most 64 characters.');
+            }
+            $signal = (string) ($tag['signal'] ?? '');
+            if (! in_array($signal, self::FEEDBACK_SIGNALS, true)) {
+                throw new CurationException('invalid_feedback_tag', 'Feedback tag signal is invalid.');
+            }
+            $normalized[] = [
+                'id' => $id,
+                'label' => $this->text($tag['label'] ?? null, 48, 'feedback_tag.label'),
+                'signal' => $signal,
+            ];
+        }
+
+        if (collect($normalized)->pluck('id')->unique()->count() !== count($normalized)) {
+            throw new CurationException('invalid_feedback_tag', 'Feedback tag ids must be unique within a story.');
+        }
+        $signals = collect($normalized)->pluck('signal');
+        if (! $signals->contains(fn ($signal) => in_array($signal, self::POSITIVE_SIGNALS, true))
+            || ! $signals->contains(fn ($signal) => in_array($signal, self::CORRECTIVE_SIGNALS, true))) {
+            throw new CurationException('invalid_feedback_tag', 'Feedback tags must include positive and corrective choices.');
+        }
+
+        return $normalized;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function normalizeMedia(mixed $media): array
+    {
+        if (! is_array($media) || count($media) > 3) {
+            throw new CurationException('invalid_media', 'Media must be an array containing at most three items.');
+        }
+
+        $normalized = [];
+        foreach (array_values($media) as $position => $item) {
+            if (! is_array($item) || ! in_array($item['type'] ?? null, ['image', 'video'], true)) {
+                throw new CurationException('invalid_media', 'Each media item must be an image or video object.');
+            }
+            [$url] = $this->publicHttpsUrl($item['url'] ?? null, 'invalid_media', 'media.url');
+            [$sourceUrl] = $this->publicHttpsUrl($item['source_url'] ?? null, 'invalid_media', 'media.source_url');
+            $thumbnailUrl = null;
+            if (isset($item['thumbnail_url'])) {
+                [$thumbnailUrl] = $this->publicHttpsUrl($item['thumbnail_url'], 'invalid_media', 'media.thumbnail_url');
+            }
+
+            $provider = null;
+            $providerId = null;
+            if ($item['type'] === 'video') {
+                [$provider, $providerId] = $this->videoProvider($url);
+            }
+
+            $normalized[] = [
+                'media_type' => $item['type'],
+                'url' => $url,
+                'provider' => $provider,
+                'provider_id' => $providerId,
+                'thumbnail_url' => $thumbnailUrl,
+                'caption' => $this->text($item['caption'] ?? null, 500, 'media.caption'),
+                'alt_text' => $this->text($item['alt_text'] ?? null, 500, 'media.alt_text'),
+                'credit' => $this->text($item['credit'] ?? null, 255, 'media.credit'),
+                'source_url' => $sourceUrl,
+                'position' => $position,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    /** @return array{0: string, 1: string} */
+    private function publicHttpsUrl(mixed $value, string $code, string $field): array
+    {
+        $url = trim((string) $value);
+        $parts = parse_url($url);
+        if (($parts['scheme'] ?? '') !== 'https' || empty($parts['host'])) {
+            throw new CurationException($code, "$field must be an absolute HTTPS URL.");
+        }
+        $domain = strtolower(rtrim($parts['host'], '.'));
+        if ($domain === 'localhost' || $domain === 'localhost.localdomain' || $this->isPrivateIp($domain)) {
+            throw new CurationException($code, "$field cannot use a local or private-network host.");
+        }
+
+        return [$url, $domain];
+    }
+
+    /** @return array{0: string, 1: string|null} */
+    private function videoProvider(string $url): array
+    {
+        $parts = parse_url($url);
+        $host = strtolower($parts['host'] ?? '');
+        $path = trim($parts['path'] ?? '', '/');
+
+        if (in_array($host, ['youtube.com', 'www.youtube.com', 'm.youtube.com'], true)) {
+            parse_str($parts['query'] ?? '', $query);
+            $id = $query['v'] ?? (preg_match('#^(?:shorts|embed)/([^/]+)#', $path, $match) ? $match[1] : null);
+            if (is_string($id) && preg_match('/^[A-Za-z0-9_-]{6,32}$/', $id)) {
+                return ['youtube', $id];
+            }
+        }
+        if ($host === 'youtu.be' && preg_match('/^([A-Za-z0-9_-]{6,32})/', $path, $match)) {
+            return ['youtube', $match[1]];
+        }
+        if (in_array($host, ['vimeo.com', 'www.vimeo.com'], true) && preg_match('/^(\d+)/', $path, $match)) {
+            return ['vimeo', $match[1]];
+        }
+        if (preg_match('/\.(?:mp4|webm)$/i', $parts['path'] ?? '')) {
+            return ['direct', null];
+        }
+
+        throw new CurationException('invalid_media', 'Video URLs must be direct MP4/WebM files or recognized YouTube/Vimeo pages.');
     }
 
     private function text(mixed $value, int $max, string $field): string

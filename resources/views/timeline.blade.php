@@ -27,7 +27,7 @@
 
     <div id="story-list" data-story-list>
         @forelse($stories as $story)
-            @include('partials.story-card', ['story' => $story, 'semanticTags' => $semanticTags])
+            @include('partials.story-card', ['story' => $story])
         @empty
             <section class="empty" data-empty-state>
                 <p class="eyebrow">BLANK SLATE</p>

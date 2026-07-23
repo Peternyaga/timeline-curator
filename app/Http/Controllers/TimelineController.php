@@ -10,7 +10,7 @@ class TimelineController extends Controller
     public function __invoke()
     {
         $stories = StoryCluster::query()
-            ->with(['sources', 'feedback'])
+            ->with(['sources', 'media', 'feedback'])
             ->latest('published_at')
             ->latest('id')
             ->paginate(20);
@@ -23,7 +23,6 @@ class TimelineController extends Controller
         return view('timeline', [
             'stories' => $stories,
             'liveCursor' => $liveCursor,
-            'semanticTags' => ['Great source', 'More like this', 'SEO spam', 'Outdated', 'Paywalled'],
         ]);
     }
 }

@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Curation\CurationPolicyService;
 use App\Models\AgentRun;
 use App\Models\FeedbackEvent;
 use App\Models\StoryCluster;
+use App\Models\StoryMedia;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Tenancy\TenantContext;
@@ -25,7 +27,7 @@ class TimelineInteractionTest extends TestCase
         $this->actingAs($user)->postJson("/stories/{$story->id}/feedback", [
             'relevance_score' => 5,
             'depth_score' => 4,
-            'semantic_tags' => ['Great source'],
+            'semantic_tags' => ['strong-source'],
             'comment' => 'Keep this signal.',
         ])->assertOk()->assertJson([
             'message' => 'Feedback saved.',
@@ -35,7 +37,7 @@ class TimelineInteractionTest extends TestCase
         $this->actingAs($user)->postJson("/stories/{$story->id}/feedback", [
             'relevance_score' => 4,
             'depth_score' => 3,
-            'semantic_tags' => ['More like this'],
+            'semantic_tags' => ['more-topic'],
             'comment' => 'Updated.',
         ])->assertOk();
 
@@ -47,6 +49,19 @@ class TimelineInteractionTest extends TestCase
             'depth_score' => 3,
             'comment' => 'Updated.',
         ]);
+        foreach (['Second signal', 'Third signal'] as $title) {
+            $signalStory = $this->createStory($title, Carbon::now());
+            FeedbackEvent::query()->create([
+                'story_cluster_id' => $signalStory->id,
+                'relevance_score' => 4,
+                'depth_score' => 3,
+                'semantic_tags' => ['more-topic'],
+            ]);
+        }
+        $this->assertSame(
+            ['more_like_this'],
+            app(CurationPolicyService::class)->context()['feedback_summary']['top_signals'],
+        );
     }
 
     public function test_feedback_returns_json_validation_errors_and_anchor_fallback(): void
@@ -61,6 +76,12 @@ class TimelineInteractionTest extends TestCase
         ]);
         $this->assertSame(422, $invalid->getStatusCode(), $invalid->getContent());
         $invalid->assertJsonValidationErrors('relevance_score');
+
+        $this->actingAs($user)->postJson("/stories/{$story->id}/feedback", [
+            'relevance_score' => 3,
+            'depth_score' => 3,
+            'semantic_tags' => ['not-a-story-tag'],
+        ])->assertJsonValidationErrors('semantic_tags.0');
 
         $this->actingAs($user)->post("/stories/{$story->id}/feedback", [
             'relevance_score' => 5,
@@ -79,14 +100,30 @@ class TimelineInteractionTest extends TestCase
 
         $this->setTenant($user);
         $story = $this->createStory('First live story', Carbon::now()->addSecond());
+        StoryMedia::query()->create([
+            'story_cluster_id' => $story->id,
+            'media_type' => 'video',
+            'url' => 'https://www.youtube.com/watch?v=abcdefghijk',
+            'provider' => 'youtube',
+            'provider_id' => 'abcdefghijk',
+            'thumbnail_url' => 'https://images.example.org/video.jpg',
+            'caption' => 'A source video',
+            'alt_text' => 'A source video preview',
+            'credit' => 'Example',
+            'source_url' => 'https://example.org/story',
+            'position' => 0,
+        ]);
 
-        $this->actingAs($user)->getJson('/timeline/updates?'.http_build_query([
+        $update = $this->actingAs($user)->getJson('/timeline/updates?'.http_build_query([
             'after_published_at' => Carbon::now()->toIso8601String(),
             'after_id' => '00000000000000000000000000',
-        ]))->assertOk()
+        ]));
+        $update->assertOk()
             ->assertJsonPath('count', 1)
             ->assertJsonPath('cursor.id', $story->id)
-            ->assertSee('First live story');
+            ->assertSee('First live story')
+            ->assertSee('More on this topic');
+        $this->assertStringContainsString('data-video-provider="youtube"', $update->json('html'));
 
         Carbon::setTestNow();
     }
@@ -139,6 +176,29 @@ class TimelineInteractionTest extends TestCase
         $this->actingAs($first)->getJson($this->updatesUrl($foreignStory))->assertNotFound();
     }
 
+    public function test_timeline_renders_media_and_story_specific_feedback_tags(): void
+    {
+        $user = User::factory()->create();
+        $this->setTenant($user);
+        $story = $this->createStory('Rich story', Carbon::parse('2026-07-23 09:00:00'));
+        StoryMedia::query()->create([
+            'story_cluster_id' => $story->id,
+            'media_type' => 'image',
+            'url' => 'https://images.example.org/story.jpg',
+            'caption' => 'The story image',
+            'alt_text' => 'A descriptive story image',
+            'credit' => 'Example photographer',
+            'source_url' => 'https://example.org/story',
+            'position' => 0,
+        ]);
+
+        $this->actingAs($user)->get('/timeline')
+            ->assertOk()
+            ->assertSee('src="https://images.example.org/story.jpg"', false)
+            ->assertSee('More on this topic')
+            ->assertDontSee('SEO spam');
+    }
+
     private function createStory(string $title, Carbon $publishedAt): StoryCluster
     {
         $run = AgentRun::query()->create([
@@ -151,7 +211,14 @@ class TimelineInteractionTest extends TestCase
             'client_item_id' => 'item-'.str()->ulid(),
             'title' => $title,
             'technical_bullets' => ['One.', 'Two.', 'Three.'],
+            'summary_points' => ['One.', 'Two.', 'Three.'],
             'why_it_matters' => 'It matters.',
+            'feedback_tags' => [
+                ['id' => 'more-topic', 'label' => 'More on this topic', 'signal' => 'more_like_this'],
+                ['id' => 'strong-source', 'label' => 'Strong source choice', 'signal' => 'good_source'],
+                ['id' => 'less-topic', 'label' => 'Less on this topic', 'signal' => 'less_like_this'],
+                ['id' => 'needs-depth', 'label' => 'Needs more depth', 'signal' => 'wrong_depth'],
+            ],
             'fingerprint' => hash('sha256', $title.str()->random()),
             'published_at' => $publishedAt,
         ]);

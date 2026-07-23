@@ -14,11 +14,12 @@ class FeedbackController extends Controller
     public function store(Request $request, string $story): JsonResponse|RedirectResponse
     {
         $story = StoryCluster::query()->findOrFail($story);
+        $allowedTags = collect($story->feedback_tags ?? [])->pluck('id')->filter()->values()->all();
         $data = $request->validate([
             'relevance_score' => ['required', 'integer', 'between:1,5'],
             'depth_score' => ['required', 'integer', 'between:1,5'],
             'semantic_tags' => ['array', 'max:5'],
-            'semantic_tags.*' => [Rule::in(['Great source', 'More like this', 'SEO spam', 'Outdated', 'Paywalled'])],
+            'semantic_tags.*' => ['string', 'distinct', Rule::in($allowedTags)],
             'comment' => ['nullable', 'string', 'max:2000'],
         ]);
 

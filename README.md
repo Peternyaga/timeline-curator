@@ -11,8 +11,8 @@ The application never calls an LLM API to scrape, rank, summarize, or judge cont
 - Official `mcp/sdk` Streamable HTTP server at `/mcp`
 - One tenant per Timeline account, derived exclusively from the validated opaque token
 - Tenant-scoped models plus composite tenant foreign keys for defense in depth
-- Story clusters with exactly three technical bullets and mapped citations
-- Explicit 1–5 relevance and depth feedback, controlled tags, and comments
+- Story clusters with flexible topic-appropriate summaries, verified sources, and optional attributed media
+- Explicit 1–5 relevance and depth feedback, story-specific tags backed by stable learning signals, and comments
 - Public-beta Codex plugin in `plugins/timeline-curator`
 
 ## Local setup
@@ -58,6 +58,6 @@ Recommended schedules are 07:00 and 18:00 in each user's timezone. Each run is a
 - Tenant context is cleared after every request.
 - Tenant-bound inserts overwrite any caller-supplied tenant value.
 - Source pages are not fetched by the backend; only minimal evidence metadata is stored.
-- HTTPS, private-address, quota, hard-rule, evidence-coverage, and idempotency checks run before publication.
+- HTTPS, private-address, media-provider, quota, hard-rule, feedback-tag, and idempotency checks run before publication.
 
 The MCP contract and rejection codes are documented in [docs/mcp-contract.md](docs/mcp-contract.md).

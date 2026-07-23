@@ -1,5 +1,56 @@
 const feedbackSelector = '[data-feedback-form]';
 
+const videoEmbedUrl = (provider, id) => {
+    if (provider === 'youtube') {
+        return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}`;
+    }
+
+    if (provider === 'vimeo') {
+        return `https://player.vimeo.com/video/${encodeURIComponent(id)}?dnt=1`;
+    }
+
+    return null;
+};
+
+document.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-load-video]');
+
+    if (!button) {
+        return;
+    }
+
+    const container = button.closest('[data-video-provider]');
+    const src = videoEmbedUrl(container?.dataset.videoProvider, container?.dataset.videoId);
+
+    if (!container || !src) {
+        return;
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.src = src;
+    iframe.title = container.dataset.videoTitle || 'Embedded story video';
+    iframe.loading = 'lazy';
+    iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+    iframe.allow = 'accelerometer; encrypted-media; picture-in-picture; fullscreen';
+    iframe.sandbox = 'allow-scripts allow-same-origin allow-presentation';
+    iframe.allowFullscreen = true;
+    container.replaceChildren(iframe);
+});
+
+document.addEventListener('error', (event) => {
+    const asset = event.target.closest?.('[data-media-asset]');
+
+    if (!asset) {
+        return;
+    }
+
+    asset.hidden = true;
+    const fallback = asset.closest('.media-item')?.querySelector('[data-media-fallback]');
+    if (fallback) {
+        fallback.hidden = false;
+    }
+}, true);
+
 const setFeedbackStatus = (form, message, isError = false) => {
     const status = form.querySelector('[data-form-status]');
 

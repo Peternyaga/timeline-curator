@@ -13,6 +13,14 @@ class CurationPolicyService
 {
     public const RUNS_PER_DAY = 3;
 
+    private const LEGACY_SIGNALS = [
+        'Great source' => 'good_source',
+        'More like this' => 'more_like_this',
+        'SEO spam' => 'bad_source',
+        'Outdated' => 'stale',
+        'Paywalled' => 'inaccessible',
+    ];
+
     public function __construct(private TenantContext $context) {}
 
     /** @return array<string, mixed> */
@@ -23,7 +31,11 @@ class CurationPolicyService
             ->where('enabled', true)
             ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->latest()->get(['id', 'body', 'strength', 'structured_rules', 'expires_at']);
-        $feedback = FeedbackEvent::query()->latest()->limit(100)->get();
+        $feedback = FeedbackEvent::query()
+            ->with('storyCluster:id,tenant_id,feedback_tags')
+            ->latest()
+            ->limit(100)
+            ->get();
 
         $payload = [
             'tenant_id' => $this->context->id(),
@@ -35,6 +47,9 @@ class CurationPolicyService
                 'accepted_clusters_per_run' => 20,
                 'sources_per_run' => 50,
                 'sources_per_cluster' => 5,
+                'summary_points_per_cluster' => ['min' => 1, 'max' => 6],
+                'media_per_cluster' => 3,
+                'feedback_tags_per_cluster' => ['min' => 4, 'max' => 6],
             ],
         ];
 
@@ -53,9 +68,11 @@ class CurationPolicyService
             'generated_at' => now()->toIso8601String(),
             'instructions' => [
                 'Research with the Codex task web/search/browser capabilities; the Timeline API does not scrape.',
-                'Prefer primary and authoritative sources, obey robots, terms, and paywalls, and never bypass access controls.',
+                'Adapt research methods and writing to the user’s topic, whether technical, cultural, local, practical, recreational, or news-driven.',
+                'Search from multiple angles, inspect a broad candidate pool, and verify consequential or disputed claims with independent evidence when available.',
+                'Prefer topic-appropriate primary and authoritative sources, obey robots, terms, and paywalls, and never bypass access controls.',
                 'Return fewer or zero clusters when evidence does not meet the policy.',
-                'Every cluster must contain exactly three technical bullets with source-to-bullet evidence mapping.',
+                'Include relevant, attributable images or videos when they materially improve a story, and generate balanced story-specific feedback tags.',
             ],
         ];
     }
@@ -74,20 +91,34 @@ class CurationPolicyService
         });
         $weight = $weighted->sum('weight');
 
-        $tags = [];
+        $tagLabels = [];
+        $signals = [];
         foreach ($weighted as $item) {
-            foreach ($item['event']->semantic_tags ?? [] as $tag) {
-                $tags[$tag] = ($tags[$tag] ?? 0) + $item['weight'];
+            $definitions = collect($item['event']->storyCluster?->feedback_tags ?? [])->keyBy('id');
+            foreach ($item['event']->semantic_tags ?? [] as $storedTag) {
+                $definition = $definitions->get($storedTag);
+                $label = is_array($definition) ? ($definition['label'] ?? $storedTag) : $storedTag;
+                $signal = is_array($definition)
+                    ? ($definition['signal'] ?? null)
+                    : (self::LEGACY_SIGNALS[$storedTag] ?? null);
+                $tagLabels[$label] = ($tagLabels[$label] ?? 0) + $item['weight'];
+                if ($signal) {
+                    $signals[$signal] = ($signals[$signal] ?? 0) + $item['weight'];
+                }
             }
         }
-        arsort($tags);
+        arsort($tagLabels);
+        arsort($signals);
 
         return [
             'sample_size' => $events->count(),
             'stable_signal' => true,
             'relevance_mean' => round($weighted->sum(fn ($item) => $item['event']->relevance_score * $item['weight']) / $weight, 2),
             'depth_mean' => round($weighted->sum(fn ($item) => $item['event']->depth_score * $item['weight']) / $weight, 2),
-            'top_tags' => array_slice(array_keys($tags), 0, 8),
+            'top_signals' => array_slice(array_keys($signals), 0, 8),
+            'top_tag_labels' => array_slice(array_keys($tagLabels), 0, 8),
+            // Compatibility for installed v0.1.x plugin tasks.
+            'top_tags' => array_slice(array_keys($tagLabels), 0, 8),
             'recent_comments' => $events->whereNotNull('comment')->take(10)->pluck('comment')->values()->all(),
             'half_life_days' => 30,
         ];

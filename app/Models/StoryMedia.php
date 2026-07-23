@@ -7,15 +7,24 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['story_cluster_id', 'relevance_score', 'depth_score', 'semantic_tags', 'comment'])]
-class FeedbackEvent extends Model
+#[Fillable([
+    'story_cluster_id',
+    'media_type',
+    'url',
+    'provider',
+    'provider_id',
+    'thumbnail_url',
+    'caption',
+    'alt_text',
+    'credit',
+    'source_url',
+    'position',
+])]
+class StoryMedia extends Model
 {
     use BelongsToTenant, HasUlids;
 
-    protected function casts(): array
-    {
-        return ['semantic_tags' => 'array'];
-    }
+    protected $table = 'story_media';
 
     public function storyCluster()
     {

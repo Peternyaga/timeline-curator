@@ -19,7 +19,7 @@ class McpController extends Controller
     public function __invoke(Request $request, CurationTools $tools, TenantContext $tenant): Response
     {
         $server = Server::builder()
-            ->setServerInfo('Timeline Curator', '0.1.0')
+            ->setServerInfo('Timeline Curator', '0.2.0')
             ->setSession(new FileSessionStore(
                 rtrim((string) config('mcp.session_path'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$tenant->id(),
                 (int) config('mcp.session_ttl'),
@@ -39,7 +39,89 @@ class McpController extends Controller
                 'properties' => [
                     'run_id' => ['type' => 'string'],
                     'context_version' => ['type' => 'string'],
-                    'stories' => ['type' => 'array', 'items' => ['type' => 'object'], 'minItems' => 1, 'maxItems' => 10],
+                    'stories' => [
+                        'type' => 'array',
+                        'minItems' => 1,
+                        'maxItems' => 10,
+                        'items' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'client_item_id' => ['type' => 'string', 'maxLength' => 128],
+                                'title' => ['type' => 'string', 'maxLength' => 255],
+                                'summary_points' => [
+                                    'type' => 'array',
+                                    'items' => ['type' => 'string', 'maxLength' => 600],
+                                    'minItems' => 1,
+                                    'maxItems' => 6,
+                                ],
+                                'technical_bullets' => [
+                                    'type' => 'array',
+                                    'items' => ['type' => 'string', 'maxLength' => 600],
+                                    'minItems' => 1,
+                                    'maxItems' => 6,
+                                    'description' => 'Deprecated compatibility alias for summary_points.',
+                                ],
+                                'why_it_matters' => ['type' => ['string', 'null'], 'maxLength' => 1200],
+                                'sources' => [
+                                    'type' => 'array',
+                                    'minItems' => 1,
+                                    'maxItems' => 5,
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'title' => ['type' => 'string', 'maxLength' => 255],
+                                            'url' => ['type' => 'string', 'format' => 'uri'],
+                                            'role' => ['type' => 'string', 'enum' => ['primary', 'supporting']],
+                                            'published_at' => ['type' => ['string', 'null'], 'format' => 'date-time'],
+                                        ],
+                                        'required' => ['title', 'url', 'role'],
+                                    ],
+                                ],
+                                'media' => [
+                                    'type' => 'array',
+                                    'maxItems' => 3,
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'type' => ['type' => 'string', 'enum' => ['image', 'video']],
+                                            'url' => ['type' => 'string', 'format' => 'uri'],
+                                            'thumbnail_url' => ['type' => ['string', 'null'], 'format' => 'uri'],
+                                            'caption' => ['type' => 'string', 'maxLength' => 500],
+                                            'alt_text' => ['type' => 'string', 'maxLength' => 500],
+                                            'credit' => ['type' => 'string', 'maxLength' => 255],
+                                            'source_url' => ['type' => 'string', 'format' => 'uri'],
+                                        ],
+                                        'required' => ['type', 'url', 'caption', 'alt_text', 'credit', 'source_url'],
+                                    ],
+                                ],
+                                'feedback_tags' => [
+                                    'type' => 'array',
+                                    'minItems' => 4,
+                                    'maxItems' => 6,
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'id' => ['type' => 'string', 'maxLength' => 64],
+                                            'label' => ['type' => 'string', 'maxLength' => 48],
+                                            'signal' => [
+                                                'type' => 'string',
+                                                'enum' => [
+                                                    'more_like_this', 'less_like_this',
+                                                    'good_source', 'bad_source',
+                                                    'useful_depth', 'wrong_depth',
+                                                    'timely', 'stale',
+                                                    'novel', 'already_known',
+                                                    'accessible', 'inaccessible',
+                                                ],
+                                            ],
+                                        ],
+                                        'required' => ['id', 'label', 'signal'],
+                                    ],
+                                ],
+                            ],
+                            'required' => ['client_item_id', 'title', 'sources'],
+                        ],
+                    ],
                 ],
                 'required' => ['run_id', 'context_version', 'stories'],
             ])
