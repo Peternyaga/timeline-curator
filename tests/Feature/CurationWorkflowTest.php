@@ -4,11 +4,14 @@ namespace Tests\Feature;
 
 use App\Curation\CurationIngestionService;
 use App\Curation\CurationPolicyService;
+use App\Curation\CurationTools;
+use App\Models\AgentRun;
 use App\Models\StoryCluster;
 use App\Models\Tenant;
 use App\Models\Topic;
 use App\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mcp\Exception\ToolCallException;
 use Tests\TestCase;
 
 class CurationWorkflowTest extends TestCase
@@ -73,5 +76,46 @@ class CurationWorkflowTest extends TestCase
         $this->assertCount(1, $result['rejected']);
         $this->assertSame('invalid_story', $result['rejected'][0]['code']);
         $this->assertSame(0, StoryCluster::query()->count());
+    }
+
+    public function test_context_reports_daily_usage_without_changing_policy_version(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        Topic::query()->create(['name' => 'Physics', 'brief' => 'Primary research']);
+
+        $policy = app(CurationPolicyService::class);
+        $before = $policy->context();
+        AgentRun::query()->create([
+            'context_version' => $before['context_version'],
+            'exact_queries' => ['physics breakthrough'],
+        ]);
+        $after = $policy->context();
+
+        $this->assertSame(0, $before['usage']['runs_used_today']);
+        $this->assertSame(3, $before['usage']['runs_remaining_today']);
+        $this->assertSame(1, $after['usage']['runs_used_today']);
+        $this->assertSame(2, $after['usage']['runs_remaining_today']);
+        $this->assertSame($before['context_version'], $after['context_version']);
+    }
+
+    public function test_daily_quota_is_returned_as_a_readable_tool_error(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant, ['read:curation-context', 'write:curation-runs']);
+        Topic::query()->create(['name' => 'Physics', 'brief' => 'Primary research']);
+        $version = app(CurationPolicyService::class)->context()['context_version'];
+
+        foreach (range(1, CurationPolicyService::RUNS_PER_DAY) as $index) {
+            AgentRun::query()->create([
+                'context_version' => $version,
+                'exact_queries' => ["physics breakthrough $index"],
+            ]);
+        }
+
+        $this->expectException(ToolCallException::class);
+        $this->expectExceptionMessage('[quota_exceeded] The daily run quota has been reached.');
+
+        app(CurationTools::class)->beginCurationRun($version, ['one more query'], '0.1.0');
     }
 }

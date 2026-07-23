@@ -12,7 +12,7 @@
         <h1>A research timeline that learns only from you.</h1>
         <p class="lede">Timeline stores your topics and feedback. Your independently authenticated Codex task researches the web, filters evidence, and returns a private feed—without a shared scraping worker or application-side LLM calls.</p>
         <div class="hero-actions">
-            @auth<a class="button" href="{{ route('timeline') }}">Open timeline</a>@else<a class="button" href="{{ route('login') }}">Continue with Auth0</a>@endauth
+            @auth<a class="button" href="{{ route('timeline') }}">Open timeline</a>@else<a class="button" href="{{ route('register') }}">Create your Timeline</a><a class="text-link" href="{{ route('login') }}">Sign in</a>@endauth
             <a class="text-link" href="/.well-known/oauth-protected-resource">OAuth metadata →</a>
         </div>
         <section class="principles">

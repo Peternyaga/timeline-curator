@@ -1,6 +1,6 @@
 {
   "name": "timeline-curator",
-  "version": "0.1.0+codex.20260721093623",
+  "version": "0.1.0+codex.20260723082754",
   "description": "Run a private, feedback-trained research loop against your Timeline account.",
   "author": {
     "name": "Peter Ngari",

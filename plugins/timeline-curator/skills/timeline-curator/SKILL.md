@@ -10,15 +10,16 @@ Operate as the user's independently authenticated curation task. The Timeline se
 ## Curation cycle
 
 1. Call `get_curation_context` before any web research. Treat its `context_version` as immutable for this run.
-2. Stop with a useful empty result when there are no active topics. Do not invent a generic feed.
-3. Turn each topic, directive, and stable feedback signal into explicit research queries. Hard directives override soft preferences and inferred feedback.
-4. Research with available web search, browser, RSS, and lawful official APIs. Prefer primary sources, peer-reviewed work, standards, release notes, and technically credible specialist publications.
-5. Respect robots, terms, rate limits, and paywalls. Never bypass access controls. Do not submit a claim that cannot be supported by inspected evidence.
-6. Call `begin_curation_run` once with every exact query and this skill's version (`0.1.0`).
-7. Cluster sources covering the same underlying event. Precision is more important than volume; zero accepted clusters is valid.
-8. For every candidate, write exactly three concise technical bullets. Map each source to the bullet numbers it supports and designate exactly one primary source.
-9. Submit candidates in batches of at most ten with `submit_story_batch`. Do not retry deterministic rejections unchanged. On `policy_changed`, retrieve context again and start a new run.
-10. Call `complete_curation_run` with `completed`, `completed_empty`, or `failed`. Do not leave a run open.
+2. Inspect `usage.runs_remaining_today` immediately. When it is zero, stop before research and report `usage.resets_at`. Never retry a `quota_exceeded` error in the same cycle.
+3. Stop with a useful empty result when there are no active topics. Do not invent a generic feed.
+4. Turn each topic, directive, and stable feedback signal into explicit research queries. Hard directives override soft preferences and inferred feedback.
+5. Research with available web search, browser, RSS, and lawful official APIs. Prefer primary sources, peer-reviewed work, standards, release notes, and technically credible specialist publications.
+6. Respect robots, terms, rate limits, and paywalls. Never bypass access controls. Do not submit a claim that cannot be supported by inspected evidence.
+7. Call `begin_curation_run` once with every exact query and this skill's base version (`0.1.0`).
+8. Cluster sources covering the same underlying event. Precision is more important than volume; zero accepted clusters is valid.
+9. For every candidate, write exactly three concise technical bullets. Map each source to the bullet numbers it supports and designate exactly one primary source.
+10. Submit candidates in batches of at most ten with `submit_story_batch`. Do not retry deterministic rejections unchanged. On `policy_changed`, retrieve context again and start a new run.
+11. Call `complete_curation_run` with `completed`, `completed_empty`, or `failed`. Do not leave a run open.
 
 ## Safety and isolation
 

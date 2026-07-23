@@ -2,6 +2,7 @@
 
 namespace App\Curation;
 
+use App\Models\AgentRun;
 use App\Models\Directive;
 use App\Models\FeedbackEvent;
 use App\Models\Topic;
@@ -10,6 +11,8 @@ use Illuminate\Support\Collection;
 
 class CurationPolicyService
 {
+    public const RUNS_PER_DAY = 3;
+
     public function __construct(private TenantContext $context) {}
 
     /** @return array<string, mixed> */
@@ -28,15 +31,24 @@ class CurationPolicyService
             'directives' => $directives->toArray(),
             'feedback_summary' => $this->summarizeFeedback($feedback),
             'limits' => [
-                'runs_per_day' => 3,
+                'runs_per_day' => self::RUNS_PER_DAY,
                 'accepted_clusters_per_run' => 20,
                 'sources_per_run' => 50,
                 'sources_per_cluster' => 5,
             ],
         ];
 
+        $runsUsedToday = AgentRun::query()
+            ->where('created_at', '>=', now()->startOfDay())
+            ->count();
+
         return [
             ...$payload,
+            'usage' => [
+                'runs_used_today' => $runsUsedToday,
+                'runs_remaining_today' => max(0, self::RUNS_PER_DAY - $runsUsedToday),
+                'resets_at' => now()->addDay()->startOfDay()->toIso8601String(),
+            ],
             'context_version' => hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR)),
             'generated_at' => now()->toIso8601String(),
             'instructions' => [

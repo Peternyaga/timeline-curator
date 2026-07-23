@@ -16,6 +16,12 @@
         <p class="eyebrow">CURATION POLICY</p>
         <h1>Train your task</h1>
         @if(session('status'))<p class="flash">{{ session('status') }}</p>@endif
+        @if($errors->any())
+            <div class="flash error" role="alert">
+                <strong>Please correct the following:</strong>
+                <ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+            </div>
+        @endif
         <section>
             <h2>Topics <span>{{ $topics->where('active', true)->count() }}/5</span></h2>
             @foreach($topics as $topic)<div class="policy-item"><strong>{{ $topic->name }}</strong><p>{{ $topic->brief }}</p></div>@endforeach
@@ -29,9 +35,9 @@
             <h2>Agent directives</h2>
             @foreach($directives as $directive)<div class="policy-item"><span class="pill {{ $directive->strength }}">{{ $directive->strength }}</span><p>{{ $directive->body }}</p></div>@endforeach
             <form method="post" action="{{ route('directives.store') }}" class="stack">@csrf
-                <textarea name="body" placeholder="Tell the task what to prefer or avoid" required maxlength="3000"></textarea>
-                <div class="split"><select name="strength"><option value="soft">Soft preference</option><option value="hard">Hard rule</option></select><input name="expires_at" type="date"></div>
-                <input name="blocked_domains" placeholder="Blocked domains, comma-separated">
+                <textarea name="body" placeholder="Tell the task what to prefer or avoid" required maxlength="3000">{{ old('body') }}</textarea>
+                <div class="split"><select name="strength"><option value="soft" @selected(old('strength', 'soft') === 'soft')>Soft preference</option><option value="hard" @selected(old('strength') === 'hard')>Hard rule</option></select><input name="expires_at" type="date" value="{{ old('expires_at') }}"></div>
+                <input name="blocked_domains" value="{{ old('blocked_domains') }}" placeholder="Blocked domains, comma-separated">
                 <button class="button secondary">Add directive</button>
             </form>
         </section>

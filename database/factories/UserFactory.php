@@ -27,7 +27,7 @@ class UserFactory extends Factory
     {
         return [
             'tenant_id' => Tenant::factory(),
-            'auth0_sub' => 'auth0|'.fake()->unique()->uuid(),
+            'auth0_sub' => null,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),

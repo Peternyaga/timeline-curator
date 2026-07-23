@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
@@ -24,6 +25,14 @@ class DeploymentController extends Controller
 <form method="post" action="/deployment/install">
 <label for="token">Deployment token</label><br>
 <input id="token" name="token" type="password" required autocomplete="off" style="width:100%;padding:12px;margin:8px 0 16px">
+<fieldset style="border:1px solid #c9c7bd;padding:16px;margin:0 0 16px">
+<legend>Existing owner migration (optional)</legend>
+<p style="font-size:14px">If this database already has an Auth0-era owner, set that account's first local password without changing its tenant or feed.</p>
+<label for="owner_email">Existing account email</label><br>
+<input id="owner_email" name="owner_email" type="email" autocomplete="email" style="width:100%;padding:12px;margin:8px 0 16px">
+<label for="owner_password">New password (12+ characters)</label><br>
+<input id="owner_password" name="owner_password" type="password" minlength="12" autocomplete="new-password" style="width:100%;padding:12px;margin:8px 0">
+</fieldset>
 <button type="submit" style="padding:12px 18px;background:#173f2b;color:white;border:0">Run database installation</button>
 </form>
 </body></html>
@@ -48,6 +57,7 @@ HTML);
 
         try {
             Artisan::call('migrate', ['--force' => true]);
+            $this->setExistingOwnerPassword($request);
             File::put($this->completedPath(), json_encode([
                 'installed_at' => now()->toIso8601String(),
                 'app_url' => config('app.url'),
@@ -58,8 +68,8 @@ HTML);
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Installation complete</title></head>
 <body style="max-width:620px;margin:10vh auto;padding:24px;font:16px/1.55 system-ui;color:#16211b;background:#f4f1e9">
 <h1>Database installation complete</h1>
-<p>Set <code>WEB_INSTALLER_ENABLED=false</code> in the server's <code>.env</code>, then open the application health endpoint and configure Auth0.</p>
-<p><a href="/up">Check application health</a></p>
+<p>Set <code>WEB_INSTALLER_ENABLED=false</code>, then create your Timeline account and authorize the Codex plugin. Auth0 is not required.</p>
+<p><a href="/register">Create a Timeline account</a> · <a href="/up">Check application health</a></p>
 </body></html>
 HTML);
         } catch (Throwable $exception) {
@@ -70,6 +80,27 @@ HTML);
             fclose($handle);
             File::delete($inProgressPath);
         }
+    }
+
+    private function setExistingOwnerPassword(Request $request): void
+    {
+        $email = trim((string) $request->input('owner_email'));
+        $password = (string) $request->input('owner_password');
+        if ($email === '' && $password === '') {
+            return;
+        }
+
+        $credentials = Validator::make(
+            ['email' => $email, 'password' => $password],
+            ['email' => ['required', 'email'], 'password' => ['required', 'string', 'min:12']],
+        )->validate();
+
+        $user = \App\Models\User::query()->where('email', strtolower($credentials['email']))->first();
+        if (! $user) {
+            throw new \RuntimeException('The existing owner email was not found. Leave these fields blank and register a new account instead.');
+        }
+
+        $user->update(['password' => $credentials['password']]);
     }
 
     private function assertAvailable(): void

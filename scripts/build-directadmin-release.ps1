@@ -30,8 +30,8 @@ function New-RandomValue([int]$ByteCount) {
 
 Push-Location $repositoryRoot
 try {
-    if ((git status --porcelain).Count -ne 0) {
-        throw 'Commit or stash repository changes before building a deployment release.'
+    if ((git status --porcelain --untracked-files=no).Count -ne 0) {
+        throw 'Commit or stash tracked repository changes before building a deployment release.'
     }
 
     New-Item -ItemType Directory -Path $frontendPath -Force | Out-Null
@@ -65,7 +65,6 @@ try {
     }
 
     $appKey = 'base64:' + [Convert]::ToBase64String((New-RandomBytes 32))
-    $cookieSecret = ([BitConverter]::ToString((New-RandomBytes 32))).Replace('-', '').ToLowerInvariant()
     $installerToken = New-RandomValue 32
     $sha256 = [Security.Cryptography.SHA256]::Create()
     try { $installerHashBytes = $sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes($installerToken)) } finally { $sha256.Dispose() }
@@ -78,11 +77,9 @@ APP_KEY=$appKey
 APP_DEBUG=false
 APP_URL=https://curator.vumbualabs.com
 
-AUTH0_DOMAIN=REPLACE_WITH_AUTH0_DOMAIN
-AUTH0_CLIENT_ID=REPLACE_WITH_AUTH0_CLIENT_ID
-AUTH0_CLIENT_SECRET=REPLACE_WITH_AUTH0_CLIENT_SECRET
-AUTH0_COOKIE_SECRET=$cookieSecret
-AUTH0_AUDIENCE=https://curator.vumbualabs.com/mcp
+OAUTH_CODE_TTL_MINUTES=5
+OAUTH_ACCESS_TOKEN_TTL_MINUTES=60
+OAUTH_REFRESH_TOKEN_TTL_DAYS=30
 
 WEB_INSTALLER_ENABLED=true
 WEB_INSTALLER_TOKEN_HASH=$installerHash

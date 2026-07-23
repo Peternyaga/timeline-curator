@@ -7,9 +7,9 @@ The application never calls an LLM API to scrape, rank, summarize, or judge cont
 ## Architecture
 
 - Laravel 13, PHP 8.3+, MySQL, Blade, Vite
-- Auth0 login for the web application and OAuth access tokens for MCP
+- First-party email/password accounts and OAuth Authorization Code with S256 PKCE
 - Official `mcp/sdk` Streamable HTTP server at `/mcp`
-- One tenant per Auth0 subject, derived exclusively from the validated token
+- One tenant per Timeline account, derived exclusively from the validated opaque token
 - Tenant-scoped models plus composite tenant foreign keys for defense in depth
 - Story clusters with exactly three technical bullets and mapped citations
 - Explicit 1–5 relevance and depth feedback, controlled tags, and comments
@@ -27,7 +27,7 @@ npm run build
 php artisan serve
 ```
 
-Set a MySQL connection and the five `AUTH0_*` values in `.env`. See [Auth0 configuration](docs/auth0.md) and the [no-SSH DirectAdmin deployment guide](docs/deployment.md).
+Set a MySQL connection in `.env`. Timeline serves its own login, consent, registration, and token endpoints; no external identity provider is required. See [first-party authentication](docs/authentication.md) and the [no-SSH DirectAdmin deployment guide](docs/deployment.md).
 
 Run the checks:
 
@@ -50,7 +50,7 @@ Recommended schedules are 07:00 and 18:00 in each user's timezone. Each run is a
 ## Security invariants
 
 - MCP and ingestion inputs never accept `tenant_id`.
-- Access tokens are validated for issuer, audience, signature, expiry, and tool scope.
+- Access tokens are opaque, stored only as hashes, checked for expiry and tool scope, and resolved directly to their owning user.
 - Tenant context is cleared after every request.
 - Tenant-bound inserts overwrite any caller-supplied tenant value.
 - Source pages are not fetched by the backend; only minimal evidence metadata is stored.

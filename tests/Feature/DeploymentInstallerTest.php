@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class DeploymentInstallerTest extends TestCase
@@ -55,5 +57,25 @@ class DeploymentInstallerTest extends TestCase
 
         $this->assertFileExists($this->completedPath);
         $this->get('/deployment/install')->assertNotFound();
+    }
+
+    public function test_installer_can_set_the_existing_owners_first_local_password(): void
+    {
+        config()->set('deployment.web_installer_enabled', true);
+        config()->set('deployment.web_installer_token_hash', hash('sha256', 'correct-token'));
+        $user = User::factory()->create([
+            'email' => 'owner@example.com',
+            'password' => null,
+            'auth0_sub' => 'auth0|legacy-owner',
+        ]);
+
+        $this->post('/deployment/install', [
+            'token' => 'correct-token',
+            'owner_email' => 'owner@example.com',
+            'owner_password' => 'new-local-password',
+        ])->assertOk();
+
+        $this->assertTrue(Hash::check('new-local-password', $user->fresh()->password));
+        $this->assertSame($user->tenant_id, $user->fresh()->tenant_id);
     }
 }

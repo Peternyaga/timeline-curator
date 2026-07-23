@@ -1,6 +1,6 @@
 # Timeline MCP contract
 
-All tools authenticate with an Auth0 bearer token. Tenant identity is derived from `sub`; no request contains `tenant_id`.
+All tools authenticate with a first-party opaque Timeline bearer token issued through Authorization Code with S256 PKCE. The token resolves to a user and the server derives that user's tenant; no request contains `tenant_id`.
 
 ## `get_curation_context`
 
