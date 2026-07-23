@@ -19,7 +19,7 @@ class McpController extends Controller
     public function __invoke(Request $request, CurationTools $tools, TenantContext $tenant): Response
     {
         $server = Server::builder()
-            ->setServerInfo('Timeline Curator', '0.2.0')
+            ->setServerInfo('Timeline Curator', '0.3.0')
             ->setSession(new FileSessionStore(
                 rtrim((string) config('mcp.session_path'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$tenant->id(),
                 (int) config('mcp.session_ttl'),

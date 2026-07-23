@@ -11,7 +11,7 @@ The application never calls an LLM API to scrape, rank, summarize, or judge cont
 - Official `mcp/sdk` Streamable HTTP server at `/mcp`
 - One tenant per Timeline account, derived exclusively from the validated opaque token
 - Tenant-scoped models plus composite tenant foreign keys for defense in depth
-- Story clusters with flexible topic-appropriate summaries, verified sources, and optional attributed media
+- Story clusters with flexible topic-appropriate summaries, verified sources, and visual-first attributed media
 - Explicit 1–5 relevance and depth feedback, story-specific tags backed by stable learning signals, and comments
 - Public-beta Codex plugin in `plugins/timeline-curator`
 

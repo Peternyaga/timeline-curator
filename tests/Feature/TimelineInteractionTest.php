@@ -191,10 +191,27 @@ class TimelineInteractionTest extends TestCase
             'source_url' => 'https://example.org/story',
             'position' => 0,
         ]);
+        StoryMedia::query()->create([
+            'story_cluster_id' => $story->id,
+            'media_type' => 'video',
+            'url' => 'https://www.youtube.com/watch?v=abcdefghijk',
+            'provider' => 'youtube',
+            'provider_id' => 'abcdefghijk',
+            'thumbnail_url' => 'https://images.example.org/video.jpg',
+            'caption' => 'The supporting video',
+            'alt_text' => 'A video preview',
+            'credit' => 'Example publisher',
+            'source_url' => 'https://example.org/story-video',
+            'position' => 1,
+        ]);
 
         $this->actingAs($user)->get('/timeline')
             ->assertOk()
             ->assertSee('src="https://images.example.org/story.jpg"', false)
+            ->assertSee('class="media-item is-hero"', false)
+            ->assertSee('class="story-media-gallery"', false)
+            ->assertSee('data-video-provider="youtube"', false)
+            ->assertSee('data-media-fallback', false)
             ->assertSee('More on this topic')
             ->assertDontSee('SEO spam');
     }

@@ -18,6 +18,8 @@ class PolicyController extends Controller
             'archivedTopics' => $topics->where('active', false),
             'activeDirectives' => $directives->where('enabled', true),
             'archivedDirectives' => $directives->where('enabled', false),
+            'topicPresets' => config('policy_catalog.topics', []),
+            'directivePresets' => config('policy_catalog.directives', []),
         ]);
     }
 }

@@ -18,7 +18,7 @@
         <section class="principles">
             <article><span>01</span><h2>Strictly isolated</h2><p>Tenant identity comes from the OAuth token, never a request field.</p></article>
             <article><span>02</span><h2>User-owned automation</h2><p>Each user installs, authorizes, and schedules their own Codex task.</p></article>
-            <article><span>03</span><h2>Evidence first</h2><p>Every accepted story has a focused summary, inspected sources, and optional attributed media.</p></article>
+            <article><span>03</span><h2>Evidence, made visual</h2><p>Focused summaries pair with inspected sources and verified, attributed story media whenever a suitable visual exists.</p></article>
         </section>
     </main>
 </body>

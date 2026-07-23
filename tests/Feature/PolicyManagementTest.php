@@ -28,7 +28,73 @@ class PolicyManagementTest extends TestCase
             ->assertSee('Train your task')
             ->assertSee('Add a topic')
             ->assertSee('Agent directives')
+            ->assertSee('Browse popular topics')
+            ->assertSee('AI &amp; Machine Learning', false)
+            ->assertSee('Choose a useful directive')
+            ->assertSee('Prefer original sources')
+            ->assertSee('data-preset-form="topic"', false)
+            ->assertSee('data-preset-form="directive"', false)
             ->assertDontSee('Your private signal');
+    }
+
+    public function test_new_user_catalogues_are_open_and_preset_values_use_existing_endpoints(): void
+    {
+        $user = User::factory()->create();
+        $topic = config('policy_catalog.topics.0');
+        $directive = config('policy_catalog.directives.0');
+
+        $this->actingAs($user)
+            ->get('/policy')
+            ->assertOk()
+            ->assertSee('data-create-panel="topic"', false)
+            ->assertSee('data-create-panel="directive"', false)
+            ->assertSee('data-initially-open="true"', false);
+
+        $this->actingAs($user)->post('/topics', [
+            'name' => $topic['name'],
+            'brief' => $topic['brief'],
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($user)->post('/directives', [
+            'body' => $directive['body'],
+            'strength' => $directive['strength'],
+            'blocked_domains' => '',
+            'expires_at' => '',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('topics', [
+            'tenant_id' => $user->tenant_id,
+            'name' => $topic['name'],
+            'brief' => $topic['brief'],
+        ]);
+        $this->assertDatabaseHas('directives', [
+            'tenant_id' => $user->tenant_id,
+            'body' => $directive['body'],
+            'strength' => $directive['strength'],
+        ]);
+    }
+
+    public function test_topic_creation_error_reopens_the_form_with_user_input(): void
+    {
+        $user = User::factory()->create();
+        $this->setTenant($user);
+        Topic::query()->create(['name' => 'Existing topic', 'brief' => 'Existing coverage']);
+
+        $this->actingAs($user)
+            ->from('/policy')
+            ->post('/topics', [
+                'name' => '',
+                'brief' => 'Keep this draft coverage brief.',
+            ])
+            ->assertRedirect('/policy')
+            ->assertSessionHasErrors('name');
+
+        $this->actingAs($user)
+            ->get('/policy')
+            ->assertOk()
+            ->assertSee('data-create-panel="topic"', false)
+            ->assertSee('data-initially-open="true"', false)
+            ->assertSee('Keep this draft coverage brief.');
     }
 
     public function test_user_can_edit_archive_and_restore_a_topic(): void

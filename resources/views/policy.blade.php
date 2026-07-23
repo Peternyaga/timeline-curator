@@ -26,12 +26,18 @@
                 <span>{{ $activeTopics->count() }}/5 active</span>
             </div>
 
-            <details class="create-panel" @if($activeTopics->isEmpty()) open @endif>
+            <details
+                class="create-panel"
+                data-create-panel="topic"
+                data-initially-open="{{ ($activeTopics->isEmpty() || old('name') !== null || old('brief') !== null) ? 'true' : 'false' }}"
+                @if($activeTopics->isEmpty() || old('name') !== null || old('brief') !== null) open @endif
+            >
                 <summary>Add a topic</summary>
-                <form method="post" action="{{ route('topics.store') }}" class="stack">
+                <form method="post" action="{{ route('topics.store') }}" class="stack" data-preset-form="topic">
                     @csrf
-                    <label>Topic name<input name="name" value="{{ old('name') }}" required maxlength="100"></label>
-                    <label>Coverage brief<textarea name="brief" required maxlength="3000" placeholder="What high-signal coverage looks like">{{ old('brief') }}</textarea></label>
+                    @include('partials.preset-catalog', ['kind' => 'topic', 'presets' => $topicPresets])
+                    <label>Topic name<input name="name" value="{{ old('name') }}" required maxlength="100" data-preset-target="name"></label>
+                    <label>Coverage brief<textarea name="brief" required maxlength="3000" placeholder="What high-signal coverage looks like" data-preset-target="brief">{{ old('brief') }}</textarea></label>
                     <button class="button" type="submit">Add topic</button>
                 </form>
             </details>
@@ -94,13 +100,19 @@
                 <span>{{ $activeDirectives->count() }} active</span>
             </div>
 
-            <details class="create-panel" @if($activeDirectives->isEmpty()) open @endif>
+            <details
+                class="create-panel"
+                data-create-panel="directive"
+                data-initially-open="{{ ($activeDirectives->isEmpty() || old('body') !== null) ? 'true' : 'false' }}"
+                @if($activeDirectives->isEmpty() || old('body') !== null) open @endif
+            >
                 <summary>Add a directive</summary>
-                <form method="post" action="{{ route('directives.store') }}" class="stack">
+                <form method="post" action="{{ route('directives.store') }}" class="stack" data-preset-form="directive">
                     @csrf
-                    <label>Instruction<textarea name="body" required maxlength="3000" placeholder="Tell the task what to prefer or avoid">{{ old('body') }}</textarea></label>
+                    @include('partials.preset-catalog', ['kind' => 'directive', 'presets' => $directivePresets])
+                    <label>Instruction<textarea name="body" required maxlength="3000" placeholder="Tell the task what to prefer or avoid" data-preset-target="body">{{ old('body') }}</textarea></label>
                     <div class="split">
-                        <label>Strength<select name="strength"><option value="soft" @selected(old('strength', 'soft') === 'soft')>Soft preference</option><option value="hard" @selected(old('strength') === 'hard')>Hard rule</option></select></label>
+                        <label>Strength<select name="strength" data-preset-target="strength"><option value="soft" @selected(old('strength', 'soft') === 'soft')>Soft preference</option><option value="hard" @selected(old('strength') === 'hard')>Hard rule</option></select></label>
                         <label>Expires<input name="expires_at" type="date" value="{{ old('expires_at') }}"></label>
                     </div>
                     <label>Blocked domains<input name="blocked_domains" value="{{ old('blocked_domains') }}" placeholder="example.com, spam.test"></label>

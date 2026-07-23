@@ -1,7 +1,7 @@
 {
   "name": "timeline-curator",
-  "version": "0.2.0+codex.20260723180323",
-  "description": "Run a private, feedback-trained research loop with rich media against your Timeline account.",
+  "version": "0.3.0+codex.20260723193300",
+  "description": "Run a private, feedback-trained, visual-first research loop against your Timeline account.",
   "author": {
     "name": "Peter Ngari",
     "email": "nyashngari@gmail.com",
@@ -19,8 +19,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Timeline Curator",
-    "shortDescription": "Research and update your private, media-rich feed.",
-    "longDescription": "Connects Codex to your independently authenticated Timeline account, learns its explicit feedback policy, researches any configured topic, and publishes verified story clusters with relevant media and adaptive feedback choices.",
+    "shortDescription": "Research and update your private, visual-first feed.",
+    "longDescription": "Connects Codex to your independently authenticated Timeline account, learns its explicit feedback policy, researches any configured topic, and publishes verified story clusters with embeddable attributed visuals and adaptive feedback choices.",
     "developerName": "Peter Ngari",
     "category": "Productivity",
     "capabilities": [

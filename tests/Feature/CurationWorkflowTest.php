@@ -32,7 +32,7 @@ class CurationWorkflowTest extends TestCase
 
         $current = $policy->context()['context_version'];
         $ingestion = app(CurationIngestionService::class);
-        $run = $ingestion->begin($current, ['site:example.org lightweight stack'], '0.2.0');
+        $run = $ingestion->begin($current, ['site:example.org lightweight stack'], '0.3.0');
         $story = [
             'client_item_id' => 'result-1',
             'title' => 'A small team replaces a heavy frontend stack',
@@ -178,6 +178,9 @@ class CurationWorkflowTest extends TestCase
         $this->assertSame(1, $after['usage']['runs_used_today']);
         $this->assertSame(2, $after['usage']['runs_remaining_today']);
         $this->assertSame($before['context_version'], $after['context_version']);
+        $instructions = implode(' ', $before['instructions']);
+        $this->assertStringContainsString('dedicated media search for every candidate', $instructions);
+        $this->assertStringContainsString('no suitable visual survives verification', $instructions);
     }
 
     public function test_daily_quota_is_returned_as_a_readable_tool_error(): void
@@ -197,7 +200,7 @@ class CurationWorkflowTest extends TestCase
         $this->expectException(ToolCallException::class);
         $this->expectExceptionMessage('[quota_exceeded] The daily run quota has been reached.');
 
-        app(CurationTools::class)->beginCurationRun($version, ['one more query'], '0.2.0');
+        app(CurationTools::class)->beginCurationRun($version, ['one more query'], '0.3.0');
     }
 
     /** @return list<array{id: string, label: string, signal: string}> */

@@ -1,4 +1,122 @@
 const feedbackSelector = '[data-feedback-form]';
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+document.querySelectorAll('[data-preset-catalog]').forEach((catalog) => {
+    const form = catalog.closest('[data-preset-form]');
+    const search = catalog.querySelector('[data-preset-search]');
+    const cards = [...catalog.querySelectorAll('[data-preset-card]')];
+    const filters = [...catalog.querySelectorAll('[data-preset-category]')];
+    const empty = catalog.querySelector('[data-preset-empty]');
+    const status = catalog.querySelector('[data-preset-status]');
+    let activeCategory = 'all';
+
+    const applyFilters = () => {
+        const query = search.value.trim().toLocaleLowerCase();
+        let visible = 0;
+
+        cards.forEach((card) => {
+            const matchesCategory = activeCategory === 'all'
+                || card.dataset.presetCategoryName === activeCategory;
+            const matchesSearch = !query
+                || card.dataset.presetSearchText.toLocaleLowerCase().includes(query);
+            card.hidden = !(matchesCategory && matchesSearch);
+
+            if (!card.hidden) {
+                visible += 1;
+            }
+        });
+
+        empty.hidden = visible > 0;
+    };
+
+    search.addEventListener('input', applyFilters);
+
+    catalog.addEventListener('click', (event) => {
+        const categoryButton = event.target.closest('[data-preset-category]');
+        if (categoryButton) {
+            activeCategory = categoryButton.dataset.presetCategory;
+            filters.forEach((button) => {
+                const selected = button === categoryButton;
+                button.classList.toggle('is-active', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+            applyFilters();
+            return;
+        }
+
+        if (event.target.closest('[data-preset-clear]')) {
+            search.value = '';
+            activeCategory = 'all';
+            filters.forEach((button) => {
+                const selected = button.dataset.presetCategory === 'all';
+                button.classList.toggle('is-active', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+            applyFilters();
+            search.focus();
+            return;
+        }
+
+        const selectButton = event.target.closest('[data-preset-select]');
+        if (!selectButton || !form) {
+            return;
+        }
+
+        const kind = catalog.dataset.presetKind;
+        const values = kind === 'topic'
+            ? {
+                name: selectButton.dataset.presetName,
+                brief: selectButton.dataset.presetBrief,
+            }
+            : {
+                body: selectButton.dataset.presetBody,
+                strength: selectButton.dataset.presetStrength,
+            };
+        const targets = Object.fromEntries(
+            Object.keys(values).map((key) => [key, form.querySelector(`[data-preset-target="${key}"]`)]),
+        );
+        const hasUserText = kind === 'topic'
+            ? ['name', 'brief'].some((key) => targets[key]?.value.trim())
+            : Boolean(targets.body?.value.trim());
+        const differs = Object.entries(values)
+            .some(([key, value]) => targets[key]?.value !== value);
+
+        if (
+            hasUserText
+            && differs
+            && !window.confirm('Replace the text you entered with this preset?')
+        ) {
+            return;
+        }
+
+        Object.entries(values).forEach(([key, value]) => {
+            if (!targets[key]) {
+                return;
+            }
+            targets[key].value = value;
+            targets[key].dispatchEvent(new Event('input', { bubbles: true }));
+            targets[key].dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
+        catalog.querySelectorAll('[data-preset-select]').forEach((button) => {
+            const selected = button === selectButton;
+            button.classList.toggle('is-selected', selected);
+            button.setAttribute('aria-pressed', String(selected));
+        });
+
+        const label = selectButton.closest('[data-preset-card]')?.querySelector('h4')?.textContent.trim();
+        status.textContent = `${label || 'Preset'} added to the form. Review or customize it before saving.`;
+
+        const firstTarget = kind === 'topic' ? targets.name : targets.body;
+        window.requestAnimationFrame(() => {
+            firstTarget?.scrollIntoView({
+                behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+                block: 'center',
+            });
+            firstTarget?.focus({ preventScroll: true });
+        });
+    });
+});
 
 const videoEmbedUrl = (provider, id) => {
     if (provider === 'youtube') {
@@ -190,7 +308,7 @@ if (liveFeed) {
         const template = document.createElement('template');
         template.innerHTML = pending.html;
         const incoming = [...template.content.querySelectorAll('[data-story-id]')];
-        let inserted = 0;
+        const insertedStories = [];
 
         incoming.forEach((story) => {
             if (document.getElementById(story.id)) {
@@ -198,14 +316,16 @@ if (liveFeed) {
                 return;
             }
 
-            inserted += 1;
+            insertedStories.push(story);
         });
 
         storyList.prepend(template.content);
         storyList.querySelector('[data-empty-state]')?.remove();
 
-        if (total && inserted > 0) {
-            total.textContent = String((Number.parseInt(total.textContent, 10) || 0) + inserted);
+        if (total && insertedStories.length > 0) {
+            total.textContent = String(
+                (Number.parseInt(total.textContent, 10) || 0) + insertedStories.length,
+            );
         }
 
         cursor = {
@@ -215,6 +335,22 @@ if (liveFeed) {
         const hasMore = pending.has_more;
         pending = null;
         banner.hidden = true;
+
+        const newestStory = insertedStories[0];
+        if (newestStory) {
+            newestStory.tabIndex = -1;
+            newestStory.classList.add('is-new-story');
+            window.requestAnimationFrame(() => {
+                newestStory.scrollIntoView({
+                    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+                    block: 'start',
+                });
+                newestStory.focus({ preventScroll: true });
+            });
+            window.setTimeout(() => {
+                newestStory.classList.remove('is-new-story');
+            }, 2800);
+        }
 
         if (hasMore) {
             window.setTimeout(poll, 100);

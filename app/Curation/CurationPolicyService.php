@@ -72,7 +72,10 @@ class CurationPolicyService
                 'Search from multiple angles, inspect a broad candidate pool, and verify consequential or disputed claims with independent evidence when available.',
                 'Prefer topic-appropriate primary and authoritative sources, obey robots, terms, and paywalls, and never bypass access controls.',
                 'Return fewer or zero clusters when evidence does not meet the policy.',
-                'Include relevant, attributable images or videos when they materially improve a story, and generate balanced story-specific feedback tags.',
+                'Perform a dedicated media search for every candidate. Prefer publisher or primary-source visuals, then directly relevant openly licensed media.',
+                'Inspect both the originating page and final asset; submit only public HTTPS media that visibly loads, belongs to the story, has clear attribution, and can be embedded without authentication or temporary tokens.',
+                'Prefer an equally strong story with verified media. Use text-only stories only when their editorial value is high and no suitable visual survives verification.',
+                'Generate balanced story-specific feedback tags.',
             ],
         ];
     }

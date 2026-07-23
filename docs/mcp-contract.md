@@ -22,7 +22,7 @@ Input: `run_id`, `context_version`, and 1–10 story clusters. Each cluster cont
 - `summary_points` with one to six concise, topic-appropriate strings. `technical_bullets` remains a temporary compatibility alias.
 - Optional `why_it_matters`.
 - One to five inspected HTTPS `sources`, with exactly one `primary`.
-- Optional `media` with at most three attributed image or video references. Videos must be direct MP4/WebM files or recognized YouTube/Vimeo pages.
+- Optional `media` with at most three attributed image or video references. The curator must inspect the originating page and final asset, prefer publisher or primary-source visuals, verify that each public HTTPS asset loads without authentication or temporary tokens, and put the strongest hero visual first. Videos must be direct MP4/WebM files or recognized YouTube/Vimeo pages.
 - Four to six story-specific `feedback_tags`, each containing a unique slug, display label, and stable preference signal. Legacy plugin submissions may omit these during the compatibility window.
 
 The response separates `accepted` and `rejected` items. Rejections use stable codes including `policy_changed`, `duplicate`, `quota_exceeded`, `invalid_source`, `invalid_story`, `invalid_media`, `invalid_feedback_tag`, and `rule_violation`. Retrying the same `(run_id, client_item_id)` is idempotent.

@@ -86,7 +86,7 @@ The task should:
 1. Load and pin your current curation context.
 2. Research your active topics using credible, inspected sources.
 3. Start one curation run with the exact research queries.
-4. Submit only evidence-backed clusters with one to six focused summary points, inspected sources, balanced feedback choices, and relevant attributed media when available.
+4. Submit only evidence-backed clusters with one to six focused summary points, inspected sources, balanced feedback choices, and a completed media checkpoint for every candidate. Prefer verified publisher, primary-source, or directly relevant openly licensed visuals; use a text-only story only when no attributable embeddable asset qualifies.
 5. Complete the run, including a valid empty completion when nothing clears the policy.
 
 Review the result at [curator.vumbualabs.com/timeline](https://curator.vumbualabs.com/timeline), then score stories and leave comments to refine later runs.
