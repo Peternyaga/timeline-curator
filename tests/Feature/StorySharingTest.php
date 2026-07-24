@@ -87,19 +87,30 @@ class StorySharingTest extends TestCase
             'summary_points' => ['Private edited point.'],
         ]);
 
-        $this->get($url)
+        $publicPage = $this->get($url);
+        $publicPage
             ->assertOk()
             ->assertHeader('X-Robots-Tag', 'noindex, nofollow')
-            ->assertHeader('Cache-Control', 'no-store, private')
+            ->assertHeader('Cache-Control', 'no-cache, public')
             ->assertSee('Original headline')
             ->assertSee('A concise verified point.')
             ->assertSee('Primary report')
             ->assertSee('https://images.example.org/story.jpg', false)
             ->assertSee('property="og:type" content="article"', false)
             ->assertSee('name="twitter:card" content="summary_large_image"', false)
+            ->assertSee('property="og:image" content="'.asset('images/timeline-share-default.jpg').'"', false)
+            ->assertSee('property="og:image:secure_url" content="'.asset('images/timeline-share-default.jpg').'"', false)
+            ->assertSee('property="og:image:type" content="image/jpeg"', false)
+            ->assertSee('property="og:image:width" content="1200"', false)
+            ->assertSee('property="og:image:height" content="630"', false)
+            ->assertSee('property="og:image" content="https://images.example.org/story.jpg"', false)
             ->assertSee('property="og:image:alt" content="The verified event"', false)
             ->assertDontSee('Private edited headline')
             ->assertDontSee('Hidden Account');
+        $this->assertLessThan(
+            strpos($publicPage->getContent(), 'https://images.example.org/story.jpg'),
+            strpos($publicPage->getContent(), asset('images/timeline-share-default.jpg')),
+        );
 
         $this->get("/s/{$shareId}")->assertNotFound();
         $this->get($url.'&changed=1')->assertNotFound();
@@ -140,7 +151,7 @@ class StorySharingTest extends TestCase
         $shareId = $created->json('share.id');
         $this->get($url)
             ->assertOk()
-            ->assertSee(asset('images/timeline-share-default.png'), false);
+            ->assertSee(asset('images/timeline-share-default.jpg'), false);
 
         $story->delete();
         $this->assertNull(StoryShare::withoutGlobalScope('tenant')->find($shareId));

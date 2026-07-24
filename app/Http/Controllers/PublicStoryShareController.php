@@ -34,16 +34,18 @@ class PublicStoryShareController extends Controller
                 ? $socialMedia['url']
                 : ($socialMedia['thumbnail_url'] ?? null))
             : null;
+        $defaultSocialImage = asset('images/timeline-share-default.jpg');
 
         return response()
             ->view('shares.show', [
                 'snapshot' => $snapshot,
                 'presentation' => $presentation,
                 'description' => $description,
-                'socialImage' => $socialImage ?: asset('images/timeline-share-default.png'),
-                'socialImageAlt' => $socialMedia['alt_text'] ?? 'Timeline Curator editorial research preview',
+                'defaultSocialImage' => $defaultSocialImage,
+                'storySocialImage' => $socialImage,
+                'storySocialImageAlt' => $socialMedia['alt_text'] ?? null,
             ])
-            ->header('Cache-Control', 'no-store, private')
+            ->header('Cache-Control', 'public, no-cache')
             ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 }

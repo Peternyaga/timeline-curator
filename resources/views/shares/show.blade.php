@@ -10,16 +10,25 @@
     <meta property="og:title" content="{{ $snapshot['title'] }}">
     <meta property="og:description" content="{{ $description }}">
     <meta property="og:url" content="{{ $presentation['url'] }}">
-    <meta property="og:image" content="{{ $socialImage }}">
-    <meta property="og:image:alt" content="{{ $socialImageAlt }}">
+    <meta property="og:image" content="{{ $defaultSocialImage }}">
+    <meta property="og:image:secure_url" content="{{ $defaultSocialImage }}">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Timeline Curator editorial research preview">
+    @if($storySocialImage)
+        <meta property="og:image" content="{{ $storySocialImage }}">
+        <meta property="og:image:secure_url" content="{{ $storySocialImage }}">
+        <meta property="og:image:alt" content="{{ $storySocialImageAlt }}">
+    @endif
     @if($snapshot['published_at'] ?? null)
         <meta property="article:published_time" content="{{ $snapshot['published_at'] }}">
     @endif
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $snapshot['title'] }}">
     <meta name="twitter:description" content="{{ $description }}">
-    <meta name="twitter:image" content="{{ $socialImage }}">
-    <meta name="twitter:image:alt" content="{{ $socialImageAlt }}">
+    <meta name="twitter:image" content="{{ $defaultSocialImage }}">
+    <meta name="twitter:image:alt" content="Timeline Curator editorial research preview">
 @endsection
 
 @section('content')
