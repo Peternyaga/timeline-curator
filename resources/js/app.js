@@ -169,6 +169,280 @@ document.addEventListener('error', (event) => {
     }
 }, true);
 
+const copyPreparedPost = async (text) => {
+    if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.append(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+
+    if (!copied) {
+        throw new Error('Clipboard unavailable');
+    }
+};
+
+const shareViaDevice = async (share) => {
+    if (!navigator.share) {
+        throw new Error('Native sharing unavailable');
+    }
+
+    await navigator.share({
+        title: share.title,
+        text: share.short_text,
+        url: share.url,
+    });
+};
+
+const platformLabels = {
+    whatsapp: 'WhatsApp',
+    x: 'X',
+    facebook: 'Facebook',
+    linkedin: 'LinkedIn',
+    telegram: 'Telegram',
+    reddit: 'Reddit',
+    threads: 'Threads',
+    bluesky: 'Bluesky',
+    email: 'Email',
+};
+
+const shareDialog = document.querySelector('[data-share-dialog]');
+
+if (shareDialog) {
+    const loading = shareDialog.querySelector('[data-share-loading]');
+    const ready = shareDialog.querySelector('[data-share-ready]');
+    const platforms = shareDialog.querySelector('[data-share-platforms]');
+    const nativeButton = shareDialog.querySelector('[data-share-native]');
+    const copyButton = shareDialog.querySelector('[data-share-copy]');
+    const revokeButton = shareDialog.querySelector('[data-share-revoke]');
+    const retryButton = shareDialog.querySelector('[data-share-retry]');
+    const status = shareDialog.querySelector('[data-share-status]');
+    const instagramGuidance = shareDialog.querySelector('[data-share-instagram-guidance]');
+    let activeTrigger = null;
+    let activeShare = null;
+
+    const setShareStatus = (message, isError = false) => {
+        status.textContent = message;
+        status.classList.toggle('is-error', isError);
+    };
+
+    const resetShareDialog = () => {
+        activeShare = null;
+        loading.hidden = false;
+        ready.hidden = true;
+        retryButton.hidden = true;
+        platforms.replaceChildren();
+        setShareStatus('');
+    };
+
+    const renderShare = (share) => {
+        activeShare = share;
+        loading.hidden = true;
+        ready.hidden = false;
+        retryButton.hidden = true;
+        nativeButton.hidden = !navigator.share;
+        instagramGuidance.textContent = navigator.share
+            ? 'Choose Instagram or any other installed app from your device share sheet.'
+            : 'Instagram requires a device share sheet. On this browser, use “Copy prepared post” instead.';
+        platforms.replaceChildren(...Object.entries(share.platforms).map(([platform, url]) => {
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.dataset.sharePlatform = platform;
+            link.textContent = platformLabels[platform] || platform;
+
+            return link;
+        }));
+        activeTrigger?.classList.add('is-shared');
+        setShareStatus('Your public story is ready to share.');
+        (navigator.share ? nativeButton : copyButton).focus();
+    };
+
+    const prepareShare = async () => {
+        if (!activeTrigger) {
+            return;
+        }
+
+        resetShareDialog();
+
+        try {
+            const response = await fetch(activeTrigger.dataset.shareEndpoint, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                },
+            });
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok || !payload.share) {
+                throw new Error(payload.message || 'Unable to create the public link.');
+            }
+
+            renderShare(payload.share);
+        } catch (error) {
+            loading.hidden = true;
+            retryButton.hidden = false;
+            setShareStatus(
+                navigator.onLine
+                    ? error.message || 'Unable to prepare sharing. Try again.'
+                    : 'You appear to be offline. Reconnect and try again.',
+                true,
+            );
+            retryButton.focus();
+        }
+    };
+
+    document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-share-story]');
+        if (!trigger) {
+            return;
+        }
+
+        activeTrigger = trigger;
+        resetShareDialog();
+
+        if (typeof shareDialog.showModal === 'function') {
+            shareDialog.showModal();
+        } else {
+            shareDialog.setAttribute('open', '');
+        }
+
+        prepareShare();
+    });
+
+    shareDialog.querySelector('[data-share-close]').addEventListener('click', () => {
+        shareDialog.close();
+    });
+
+    shareDialog.addEventListener('close', () => {
+        activeTrigger?.focus();
+    });
+
+    retryButton.addEventListener('click', prepareShare);
+
+    nativeButton.addEventListener('click', async () => {
+        if (!activeShare) {
+            return;
+        }
+
+        try {
+            await shareViaDevice(activeShare);
+            setShareStatus('Shared successfully.');
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                setShareStatus('Sharing canceled.');
+                return;
+            }
+
+            setShareStatus('The device share sheet is unavailable. Use a shortcut or copy the prepared post.', true);
+        }
+    });
+
+    copyButton.addEventListener('click', async () => {
+        if (!activeShare) {
+            return;
+        }
+
+        try {
+            await copyPreparedPost(activeShare.full_text);
+            setShareStatus('Prepared post copied.');
+        } catch {
+            setShareStatus('Clipboard access was denied. Use one of the share shortcuts instead.', true);
+        }
+    });
+
+    revokeButton.addEventListener('click', async () => {
+        if (
+            !activeTrigger
+            || !window.confirm('Disable this public link? Anyone using it will receive a not-found page.')
+        ) {
+            return;
+        }
+
+        revokeButton.disabled = true;
+
+        try {
+            const response = await fetch(activeTrigger.dataset.revokeEndpoint, {
+                method: 'DELETE',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                },
+            });
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(payload.message || 'Unable to disable the public link.');
+            }
+
+            activeTrigger.classList.remove('is-shared');
+            const cardStatus = activeTrigger.closest('[data-story-id]')?.querySelector('[data-share-card-status]');
+            if (cardStatus) {
+                cardStatus.textContent = 'Public share link disabled.';
+            }
+            shareDialog.close();
+        } catch (error) {
+            setShareStatus(error.message || 'Unable to disable the public link.', true);
+        } finally {
+            revokeButton.disabled = false;
+        }
+    });
+}
+
+document.querySelectorAll('[data-public-share]').forEach((container) => {
+    const share = {
+        title: container.dataset.shareTitle,
+        url: container.dataset.shareUrl,
+        short_text: container.dataset.shareShortText,
+        full_text: container.dataset.shareFullText,
+    };
+    const nativeButton = container.querySelector('[data-public-share-native]');
+    const copyButton = container.querySelector('[data-public-share-copy]');
+    const status = container.querySelector('[data-public-share-status]');
+    const guidance = container.querySelector('[data-public-instagram-guidance]');
+
+    nativeButton.hidden = !navigator.share;
+    guidance.textContent = navigator.share
+        ? 'Choose Instagram or another installed app from your device share sheet.'
+        : 'Instagram requires a device share sheet. Copy the prepared post on this browser.';
+
+    nativeButton.addEventListener('click', async () => {
+        try {
+            await shareViaDevice(share);
+            status.textContent = 'Shared successfully.';
+            status.classList.remove('is-error');
+        } catch (error) {
+            status.textContent = error.name === 'AbortError'
+                ? 'Sharing canceled.'
+                : 'The device share sheet is unavailable. Use a shortcut or copy the prepared post.';
+            status.classList.toggle('is-error', error.name !== 'AbortError');
+        }
+    });
+
+    copyButton.addEventListener('click', async () => {
+        try {
+            await copyPreparedPost(share.full_text);
+            status.textContent = 'Prepared post copied.';
+            status.classList.remove('is-error');
+        } catch {
+            status.textContent = 'Clipboard access was denied. Use one of the share shortcuts instead.';
+            status.classList.add('is-error');
+        }
+    });
+});
+
 const setFeedbackStatus = (form, message, isError = false) => {
     const status = form.querySelector('[data-form-status]');
 

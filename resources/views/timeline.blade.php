@@ -40,4 +40,6 @@
 
     <div class="pagination">{{ $stories->links() }}</div>
 </main>
+
+@include('partials.share-dialog')
 @endsection

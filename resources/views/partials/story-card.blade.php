@@ -3,7 +3,21 @@
         <time datetime="{{ $story->published_at?->toIso8601String() }}">{{ optional($story->published_at)->diffForHumans() }}</time>
         <span>{{ $story->sources->count() }} sources</span>
     </div>
-    <h2>{{ $story->title }}</h2>
+    <div class="story-heading">
+        <h2>{{ $story->title }}</h2>
+        <button
+            type="button"
+            class="share-button"
+            data-share-story
+            data-share-endpoint="{{ route('stories.share.store', $story) }}"
+            data-revoke-endpoint="{{ route('stories.share.destroy', $story) }}"
+            aria-haspopup="dialog"
+        >
+            <span aria-hidden="true">↗</span>
+            Share
+        </button>
+        <span class="sr-only" data-share-card-status aria-live="polite"></span>
+    </div>
     @if($story->media->isNotEmpty())
         <div class="story-media" aria-label="Story media">
             @include('partials.story-media-item', ['media' => $story->media->first(), 'hero' => true])

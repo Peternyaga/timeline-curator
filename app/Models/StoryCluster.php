@@ -46,4 +46,9 @@ class StoryCluster extends Model
     {
         return $this->hasMany(StoryMedia::class)->orderBy('position');
     }
+
+    public function shares()
+    {
+        return $this->hasMany(StoryShare::class);
+    }
 }

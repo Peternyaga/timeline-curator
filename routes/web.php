@@ -5,12 +5,17 @@ use App\Http\Controllers\DirectiveController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\OAuthAuthorizationController;
 use App\Http\Controllers\PolicyController;
+use App\Http\Controllers\PublicStoryShareController;
+use App\Http\Controllers\StoryShareController;
 use App\Http\Controllers\TimelineController;
 use App\Http\Controllers\TimelineUpdatesController;
 use App\Http\Controllers\TopicController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
+Route::get('/s/{share}', PublicStoryShareController::class)
+    ->middleware('throttle:120,1')
+    ->name('shares.show');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -42,4 +47,10 @@ Route::middleware(['auth', 'tenant.web'])->group(function (): void {
     Route::patch('/directives/{directive}/restore', [DirectiveController::class, 'restore'])->name('directives.restore');
 
     Route::post('/stories/{story}/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
+    Route::post('/stories/{story}/share', [StoryShareController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('stories.share.store');
+    Route::delete('/stories/{story}/share', [StoryShareController::class, 'destroy'])
+        ->middleware('throttle:30,1')
+        ->name('stories.share.destroy');
 });
