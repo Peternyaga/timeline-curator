@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\AuthorizationServerMetadataController;
 use App\Http\Controllers\DeploymentController;
 use App\Http\Controllers\McpController;
-use App\Http\Controllers\AuthorizationServerMetadataController;
 use App\Http\Controllers\OAuthClientRegistrationController;
 use App\Http\Controllers\OAuthMetadataController;
 use App\Http\Controllers\OAuthTokenController;
