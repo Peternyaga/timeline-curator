@@ -35,4 +35,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Tenant::class);
     }
+
+    public function oauthGrants()
+    {
+        return $this->hasMany(OAuthGrant::class);
+    }
 }

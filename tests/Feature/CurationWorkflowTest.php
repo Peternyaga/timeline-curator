@@ -181,6 +181,12 @@ class CurationWorkflowTest extends TestCase
         $instructions = implode(' ', $before['instructions']);
         $this->assertStringContainsString('dedicated media search for every candidate', $instructions);
         $this->assertStringContainsString('no suitable visual survives verification', $instructions);
+
+        $outdated = $policy->context('0.3.0+codex.old');
+        $this->assertTrue($outdated['plugin']['update_available']);
+        $this->assertFalse($outdated['plugin']['supported']);
+        $this->assertSame('0.4.0', $outdated['plugin']['current_version']);
+        $this->assertSame($before['context_version'], $outdated['context_version']);
     }
 
     public function test_daily_quota_is_returned_as_a_readable_tool_error(): void

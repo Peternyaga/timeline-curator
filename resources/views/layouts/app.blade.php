@@ -13,12 +13,18 @@
     <nav class="desktop-nav" aria-label="Primary">
         <a href="{{ route('timeline') }}" @if(request()->routeIs('timeline*')) aria-current="page" @endif>Feed</a>
         <a href="{{ route('policy') }}" @if(request()->routeIs('policy') || request()->routeIs('topics.*') || request()->routeIs('directives.*')) aria-current="page" @endif>Policy</a>
+        <a href="{{ route('updates.index') }}" @if(request()->routeIs('updates.*')) aria-current="page" @endif>
+            Updates @if($unreadProductUpdates->isNotEmpty())<span class="nav-badge">{{ $unreadProductUpdates->count() }}</span>@endif
+        </a>
+        <a href="{{ route('connections.index') }}" @if(request()->routeIs('connections.*')) aria-current="page" @endif>Connections</a>
     </nav>
     <div class="identity">
         <span>{{ auth()->user()->name }}</span>
         <form method="post" action="{{ route('logout') }}">@csrf<button class="link-button">Sign out</button></form>
     </div>
 </header>
+
+@include('partials.product-update-banner')
 
 @yield('content')
 
@@ -28,6 +34,12 @@
     </a>
     <a href="{{ route('policy') }}" @if(request()->routeIs('policy') || request()->routeIs('topics.*') || request()->routeIs('directives.*')) aria-current="page" @endif>
         <span aria-hidden="true">☷</span> Policy
+    </a>
+    <a href="{{ route('updates.index') }}" @if(request()->routeIs('updates.*')) aria-current="page" @endif>
+        <span aria-hidden="true">!</span> Updates
+    </a>
+    <a href="{{ route('connections.index') }}" @if(request()->routeIs('connections.*')) aria-current="page" @endif>
+        <span aria-hidden="true">○</span> Connections
     </a>
 </nav>
 </body>

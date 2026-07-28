@@ -24,7 +24,7 @@ class CurationPolicyService
     public function __construct(private TenantContext $context) {}
 
     /** @return array<string, mixed> */
-    public function context(): array
+    public function context(?string $pluginVersion = null): array
     {
         $topics = Topic::query()->where('active', true)->orderBy('name')->get(['id', 'name', 'brief']);
         $directives = Directive::query()
@@ -59,6 +59,7 @@ class CurationPolicyService
 
         return [
             ...$payload,
+            'plugin' => $this->pluginStatus($pluginVersion),
             'usage' => [
                 'runs_used_today' => $runsUsedToday,
                 'runs_remaining_today' => max(0, self::RUNS_PER_DAY - $runsUsedToday),
@@ -77,6 +78,23 @@ class CurationPolicyService
                 'Prefer an equally strong story with verified media. Use text-only stories only when their editorial value is high and no suitable visual survives verification.',
                 'Generate balanced story-specific feedback tags.',
             ],
+        ];
+    }
+
+    /** @return array<string, bool|string|null> */
+    private function pluginStatus(?string $reportedVersion): array
+    {
+        $current = (string) config('product_updates.current_plugin_version');
+        $minimum = (string) config('product_updates.minimum_plugin_version');
+        $normalized = $reportedVersion ? explode('+', $reportedVersion, 2)[0] : null;
+
+        return [
+            'reported_version' => $reportedVersion,
+            'current_version' => $current,
+            'minimum_version' => $minimum,
+            'update_available' => $normalized !== null && version_compare($normalized, $current, '<'),
+            'supported' => $normalized === null || version_compare($normalized, $minimum, '>='),
+            'update_command' => 'codex plugin marketplace upgrade vumbua-labs && codex plugin add timeline-curator@vumbua-labs',
         ];
     }
 

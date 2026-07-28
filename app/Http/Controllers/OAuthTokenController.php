@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\OAuthAccessToken;
 use App\Models\OAuthAuthorizationCode;
 use App\Models\OAuthClient;
+use App\Models\OAuthGrant;
 use App\Models\OAuthRefreshToken;
 use App\OAuth\TokenFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OAuthTokenController extends Controller
 {
@@ -54,7 +56,16 @@ class OAuthTokenController extends Controller
 
             $code->update(['used_at' => now()]);
 
-            return $this->tokens($client, $code->user_id, $code->scopes);
+            $grant = OAuthGrant::query()->create([
+                'oauth_client_id' => $client->id,
+                'user_id' => $code->user_id,
+                'scopes' => $code->scopes,
+                'last_refreshed_at' => now(),
+            ]);
+
+            Log::info('Timeline OAuth grant authorized.', $this->logContext($grant));
+
+            return $this->tokens($client, $code->user_id, $code->scopes, $grant);
         });
     }
 
@@ -69,31 +80,67 @@ class OAuthTokenController extends Controller
 
         return DB::transaction(function () use ($input): JsonResponse {
             $refresh = OAuthRefreshToken::query()
+                ->with('grant')
                 ->where('token_hash', TokenFactory::hash($input['refresh_token']))
                 ->lockForUpdate()
                 ->first();
             $client = OAuthClient::query()->where('client_id', $input['client_id'])->first();
 
             if (! $refresh || ! $client || $refresh->oauth_client_id !== $client->id
-                || $refresh->revoked_at || $refresh->expires_at->isPast()) {
+                || ($refresh->expires_at && $refresh->expires_at->isPast())) {
+                Log::warning('Timeline OAuth refresh rejected.', [
+                    'reason' => ! $refresh ? 'unknown_token' : 'invalid_client_or_expired',
+                    'client_id' => $client?->id,
+                ]);
+
                 return $this->error('invalid_grant', 'The refresh token is invalid, expired, or revoked.');
             }
 
-            $refresh->update(['revoked_at' => now()]);
+            if ($refresh->revoked_at) {
+                if ($refresh->grant && ! $refresh->grant->revoked_at) {
+                    $this->revokeGrant($refresh->grant, 'refresh_token_reuse');
+                }
 
-            return $this->tokens($client, $refresh->user_id, $refresh->scopes);
+                return $this->error('invalid_grant', 'The refresh token is invalid, expired, or revoked.');
+            }
+
+            $grant = $refresh->grant;
+            if ($grant?->revoked_at) {
+                Log::warning('Timeline OAuth refresh rejected for a revoked grant.', $this->logContext($grant));
+
+                return $this->error('invalid_grant', 'The authorization has been revoked.');
+            }
+
+            if (! $grant) {
+                $grant = OAuthGrant::query()->create([
+                    'oauth_client_id' => $client->id,
+                    'user_id' => $refresh->user_id,
+                    'scopes' => $refresh->scopes,
+                    'last_refreshed_at' => now(),
+                ]);
+                $refresh->update(['oauth_grant_id' => $grant->id]);
+            }
+
+            $refresh->update(['revoked_at' => now()]);
+            $grant->update(['last_refreshed_at' => now()]);
+            Log::info('Timeline OAuth token refreshed.', $this->logContext($grant));
+
+            return $this->tokens($client, $refresh->user_id, $refresh->scopes, $grant);
         });
     }
 
-    private function tokens(OAuthClient $client, int $userId, array $scopes): JsonResponse
+    private function tokens(OAuthClient $client, int $userId, array $scopes, OAuthGrant $grant): JsonResponse
     {
         $access = TokenFactory::issue('tl_at_');
         $refresh = TokenFactory::issue('tl_rt_');
         $accessTtl = (int) config('oauth.access_token_ttl_minutes');
+        $refreshTtl = (int) config('oauth.refresh_token_ttl_days');
+        $refreshUntilRevoked = (bool) config('oauth.refresh_token_until_revoked');
 
         OAuthAccessToken::query()->create([
             'token_hash' => TokenFactory::hash($access),
             'oauth_client_id' => $client->id,
+            'oauth_grant_id' => $grant->id,
             'user_id' => $userId,
             'scopes' => $scopes,
             'expires_at' => now()->addMinutes($accessTtl),
@@ -101,9 +148,12 @@ class OAuthTokenController extends Controller
         OAuthRefreshToken::query()->create([
             'token_hash' => TokenFactory::hash($refresh),
             'oauth_client_id' => $client->id,
+            'oauth_grant_id' => $grant->id,
             'user_id' => $userId,
             'scopes' => $scopes,
-            'expires_at' => now()->addDays((int) config('oauth.refresh_token_ttl_days')),
+            'expires_at' => ! $refreshUntilRevoked && $refreshTtl > 0
+                ? now()->addDays($refreshTtl)
+                : null,
         ]);
 
         return response()->json([
@@ -119,5 +169,27 @@ class OAuthTokenController extends Controller
     {
         return response()->json(['error' => $error, 'error_description' => $description], 400)
             ->header('Cache-Control', 'no-store');
+    }
+
+    private function revokeGrant(OAuthGrant $grant, string $reason): void
+    {
+        $revokedAt = now();
+        $grant->update(['revoked_at' => $revokedAt]);
+        $grant->accessTokens()->whereNull('revoked_at')->update(['revoked_at' => $revokedAt]);
+        $grant->refreshTokens()->whereNull('revoked_at')->update(['revoked_at' => $revokedAt]);
+        Log::warning('Timeline OAuth grant revoked.', [
+            ...$this->logContext($grant),
+            'reason' => $reason,
+        ]);
+    }
+
+    /** @return array<string, int|string|null> */
+    private function logContext(OAuthGrant $grant): array
+    {
+        return [
+            'oauth_grant_id' => $grant->id,
+            'oauth_client_id' => $grant->oauth_client_id,
+            'user_id' => $grant->user_id,
+        ];
     }
 }

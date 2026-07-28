@@ -22,6 +22,15 @@
     </header>
 
     @if(session('status'))<p class="flash page-flash">{{ session('status') }}</p>@endif
+    @if($curatorHealth)
+        <aside class="curator-health-warning" role="alert">
+            <div>
+                <strong>{{ $curatorHealth['title'] }}</strong>
+                <p>{{ $curatorHealth['message'] }}</p>
+            </div>
+            <a class="button compact secondary" href="{{ route('connections.index') }}">Check connection</a>
+        </aside>
+    @endif
 
     <button class="new-stories-banner" type="button" data-new-stories hidden aria-live="polite"></button>
 

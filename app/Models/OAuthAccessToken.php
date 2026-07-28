@@ -12,7 +12,7 @@ class OAuthAccessToken extends Model
     protected $table = 'oauth_access_tokens';
 
     protected $fillable = [
-        'token_hash', 'oauth_client_id', 'user_id', 'scopes', 'expires_at',
+        'token_hash', 'oauth_client_id', 'oauth_grant_id', 'user_id', 'scopes', 'expires_at',
         'revoked_at', 'last_used_at',
     ];
 
@@ -29,5 +29,10 @@ class OAuthAccessToken extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function grant()
+    {
+        return $this->belongsTo(OAuthGrant::class, 'oauth_grant_id');
     }
 }

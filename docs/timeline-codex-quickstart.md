@@ -250,6 +250,8 @@ Then restart Codex or open a new task.
 
 ### Authentication did not open or expired
 
+Timeline 0.4 connections normally renew in the background until you revoke them. Open **Connections** in Timeline to confirm that the Codex installation is active and inspect its last contact and token-renewal times.
+
 Run:
 
 ```bash
@@ -281,7 +283,7 @@ This can be a correct result. It means no candidate cleared your current policy 
 
 ### A scheduled run reports an authentication error
 
-Reconnect Timeline:
+The scheduled task should stop with **Timeline reauthentication required** rather than treating the failure as an empty feed. Check the **Connections** page, then reconnect Timeline:
 
 ```bash
 codex mcp logout timeline
@@ -289,6 +291,17 @@ codex mcp login timeline
 ```
 
 Then test one manual cycle before waiting for the next scheduled run.
+
+### Timeline reports that the plugin is outdated
+
+Open **Updates** in Timeline to review the release notice, then run:
+
+```bash
+codex plugin marketplace upgrade vumbua-labs
+codex plugin add timeline-curator@vumbua-labs
+```
+
+Start a new Codex task so the updated skill and MCP configuration are loaded.
 
 ### A tool reports an internal error
 

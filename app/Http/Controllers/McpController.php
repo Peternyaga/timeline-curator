@@ -19,12 +19,17 @@ class McpController extends Controller
     public function __invoke(Request $request, CurationTools $tools, TenantContext $tenant): Response
     {
         $server = Server::builder()
-            ->setServerInfo('Timeline Curator', '0.3.0')
+            ->setServerInfo('Timeline Curator', '0.4.0')
             ->setSession(new FileSessionStore(
                 rtrim((string) config('mcp.session_path'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$tenant->id(),
                 (int) config('mcp.session_ttl'),
             ))
-            ->addTool([$tools, 'getCurationContext'], 'get_curation_context', description: 'Retrieve the authenticated user’s current topics, directives, feedback policy, and context version.', inputSchema: ['type' => 'object'])
+            ->addTool([$tools, 'getCurationContext'], 'get_curation_context', description: 'Retrieve the authenticated user’s current topics, directives, feedback policy, plugin update status, and context version.', inputSchema: [
+                'type' => 'object',
+                'properties' => [
+                    'plugin_version' => ['type' => ['string', 'null'], 'maxLength' => 100],
+                ],
+            ])
             ->addTool([$tools, 'beginCurationRun'], 'begin_curation_run', description: 'Start a tenant-scoped curation run and record its exact search queries.', inputSchema: [
                 'type' => 'object',
                 'properties' => [

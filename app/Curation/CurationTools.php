@@ -14,12 +14,12 @@ class CurationTools
     ) {}
 
     /** @return array<string, mixed> */
-    public function getCurationContext(): array
+    public function getCurationContext(?string $plugin_version = null): array
     {
-        return $this->call(function (): array {
+        return $this->call(function () use ($plugin_version): array {
             $this->requirePermission('read:curation-context');
 
-            return $this->policy->context();
+            return $this->policy->context($plugin_version);
         });
     }
 

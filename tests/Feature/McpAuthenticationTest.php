@@ -34,7 +34,7 @@ class McpAuthenticationTest extends TestCase
     {
         $this->postJson('/mcp', [])->assertUnauthorized()->assertHeader(
             'WWW-Authenticate',
-            'Bearer resource_metadata="http://localhost/.well-known/oauth-protected-resource/mcp"',
+            'Bearer resource_metadata="http://localhost/.well-known/oauth-protected-resource/mcp", error="invalid_request", error_description="A bearer token is required."',
         );
     }
 
@@ -50,6 +50,7 @@ class McpAuthenticationTest extends TestCase
     {
         $user = $this->createValidAccessToken('valid-token');
         $this->call('OPTIONS', '/mcp', server: ['HTTP_AUTHORIZATION' => 'Bearer valid-token'])->assertNoContent();
+        $this->assertNotNull(OAuthAccessToken::query()->firstOrFail()->last_used_at);
         $this->assertSame($user->tenant_id, $user->tenant->id);
         $this->assertDatabaseCount('tenants', 1);
     }

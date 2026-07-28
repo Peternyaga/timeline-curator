@@ -1,9 +1,9 @@
 {
   "mcpServers": {
     "timeline": {
-      "type": "http",
       "url": "https://curator.vumbualabs.com/mcp",
       "auth": "oauth",
+      "required": true,
       "scopes": [
         "read:curation-context",
         "write:curation-runs",

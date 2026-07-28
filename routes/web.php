@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\DirectiveController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\OAuthAuthorizationController;
 use App\Http\Controllers\PolicyController;
+use App\Http\Controllers\ProductUpdateController;
 use App\Http\Controllers\PublicStoryShareController;
 use App\Http\Controllers\StoryShareController;
 use App\Http\Controllers\TimelineController;
@@ -35,6 +37,11 @@ Route::middleware(['auth', 'tenant.web'])->group(function (): void {
     Route::get('/timeline', TimelineController::class)->name('timeline');
     Route::get('/timeline/updates', TimelineUpdatesController::class)->name('timeline.updates');
     Route::get('/policy', PolicyController::class)->name('policy');
+    Route::get('/updates', [ProductUpdateController::class, 'index'])->name('updates.index');
+    Route::post('/updates/read-all', [ProductUpdateController::class, 'readAll'])->name('updates.read-all');
+    Route::post('/updates/{update}/read', [ProductUpdateController::class, 'read'])->name('updates.read');
+    Route::get('/connections', [ConnectionController::class, 'index'])->name('connections.index');
+    Route::delete('/connections/{grant}', [ConnectionController::class, 'destroy'])->name('connections.destroy');
 
     Route::post('/topics', [TopicController::class, 'store'])->name('topics.store');
     Route::patch('/topics/{topic}', [TopicController::class, 'update'])->name('topics.update');

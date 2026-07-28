@@ -22,9 +22,14 @@ The access-token row points to a Timeline user. The server loads that user's ten
 - Redirect URLs must be HTTPS, except HTTP loopback callbacks for native Codex clients.
 - Authorization codes are stored as SHA-256 hashes, expire after five minutes, and can be consumed once.
 - Access and refresh tokens are opaque random values stored only as SHA-256 hashes.
-- Access tokens expire after 60 minutes. Refresh tokens expire after 30 days and rotate on use.
+- Access tokens expire after 60 minutes.
+- Refresh tokens rotate on every use and remain valid until the user revokes the underlying authorization grant. Reuse of a rotated refresh token revokes the full grant.
+- Users can inspect last contact and renewal times or revoke an installation from `/connections`.
 - Only the three Timeline MCP scopes can be requested.
 
 TTL values can be adjusted with `OAUTH_CODE_TTL_MINUTES`, `OAUTH_ACCESS_TOKEN_TTL_MINUTES`, and `OAUTH_REFRESH_TOKEN_TTL_DAYS`.
+`OAUTH_REFRESH_TOKEN_UNTIL_REVOKED=true` is the default and takes precedence over the legacy refresh TTL, including on existing deployments whose `.env` still contains `OAUTH_REFRESH_TOKEN_TTL_DAYS=30`. Set the switch to `false` and provide a positive TTL only when an inactivity expiry is explicitly required.
+
+Bearer failures include an OAuth `invalid_request` or `invalid_token` challenge and the protected-resource metadata URL. Timeline records secret-free grant, refresh, rejection, and revocation events; raw tokens are never logged.
 
 The `auth0_sub` database column remains nullable only to preserve existing production rows during migration. It is not read by the authentication flow.

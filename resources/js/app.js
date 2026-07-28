@@ -1,6 +1,15 @@
 const feedbackSelector = '[data-feedback-form]';
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+document.addEventListener('submit', (event) => {
+    if (
+        event.target.matches('[data-revoke-connection]')
+        && !window.confirm('Revoke this Timeline connection? Its Codex installation will need to authenticate again.')
+    ) {
+        event.preventDefault();
+    }
+});
+
 document.querySelectorAll('[data-preset-catalog]').forEach((catalog) => {
     const form = catalog.closest('[data-preset-form]');
     const search = catalog.querySelector('[data-preset-search]');

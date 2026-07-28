@@ -9,11 +9,11 @@ Operate as the user's independently authenticated curation task. Timeline stores
 
 ## Curation cycle
 
-1. Call `get_curation_context` before web research. Treat its `context_version` as immutable for this run.
+1. Call `get_curation_context` with `plugin_version` set to `0.4.0` before web research. Treat its `context_version` as immutable for this run.
 2. Stop before research when `usage.runs_remaining_today` is zero and report `usage.resets_at`. Never retry `quota_exceeded` in the same cycle.
 3. Return a useful empty result when there are no active topics. Do not invent a generic feed.
 4. Turn every active topic, directive, and stable feedback signal into explicit queries. Use multiple angles per topic when useful: recent developments, primary records, independent coverage, local or global perspectives, criticism, applications, and follow-ups.
-5. Call `begin_curation_run` once with every exact query and skill version `0.3.0`.
+5. Call `begin_curation_run` once with every exact query and skill version `0.4.0`.
 6. Research with available web search, browser, RSS, and lawful official APIs. Sample broadly before selecting:
    - Match sources to the topic: official records, original research, reputable reporting, specialist publications, event pages, interviews, reviews, datasets, or community sources as appropriate.
    - Prefer primary evidence. Seek independent corroboration for disputed, consequential, surprising, or fast-moving claims when available.
@@ -30,6 +30,8 @@ Operate as the user's independently authenticated curation task. Timeline stores
    - Generate four to six short, balanced feedback choices specific to the story. Give every choice a unique lower-case slug and map it to an allowed stable signal. Include at least one positive and one corrective choice.
 10. Submit candidates in batches of at most ten with `submit_story_batch`. Do not retry deterministic rejections unchanged. On `policy_changed`, retrieve context again and start a new run.
 11. Call `complete_curation_run` with `completed`, `completed_empty`, or `failed`. Never leave a run open.
+
+If the Timeline MCP server is unavailable, cannot initialize, or returns an authentication error, stop immediately and report **Timeline reauthentication required** with `codex mcp login timeline` as the recovery action. Never reinterpret missing Timeline tools or failed authentication as an empty curation result.
 
 ## Topic adaptation
 

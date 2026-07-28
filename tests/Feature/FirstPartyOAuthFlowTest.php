@@ -2,7 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\OAuthAccessToken;
+use App\Models\OAuthClient;
+use App\Models\OAuthGrant;
+use App\Models\OAuthRefreshToken;
 use App\Models\User;
+use App\OAuth\TokenFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -76,6 +81,8 @@ class FirstPartyOAuthFlowTest extends TestCase
             ->assertOk()
             ->assertJsonPath('token_type', 'Bearer')
             ->assertJsonStructure(['access_token', 'refresh_token', 'expires_in', 'scope']);
+        $this->assertDatabaseCount('oauth_grants', 1);
+        $this->assertNull(OAuthRefreshToken::query()->firstOrFail()->expires_at);
 
         $this->call('OPTIONS', '/mcp', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$tokens->json('access_token'),
@@ -85,6 +92,62 @@ class FirstPartyOAuthFlowTest extends TestCase
         $this->post('/oauth/token', $tokenRequest)
             ->assertStatus(400)
             ->assertJsonPath('error', 'invalid_grant');
+    }
+
+    public function test_refresh_tokens_rotate_without_expiring_until_the_grant_is_revoked(): void
+    {
+        config()->set('oauth.refresh_token_until_revoked', true);
+        config()->set('oauth.refresh_token_ttl_days', 30);
+
+        $user = User::factory()->create();
+        $client = OAuthClient::query()->create([
+            'name' => 'Scheduled Codex',
+            'client_id' => 'scheduled-client',
+            'registration_key' => hash('sha256', 'scheduled-client'),
+            'redirect_uris' => ['http://127.0.0.1/callback'],
+        ]);
+        $grant = OAuthGrant::query()->create([
+            'oauth_client_id' => $client->id,
+            'user_id' => $user->id,
+            'scopes' => config('oauth.scopes'),
+            'last_refreshed_at' => now(),
+        ]);
+        OAuthRefreshToken::query()->create([
+            'token_hash' => TokenFactory::hash('durable-refresh-token'),
+            'oauth_client_id' => $client->id,
+            'oauth_grant_id' => $grant->id,
+            'user_id' => $user->id,
+            'scopes' => config('oauth.scopes'),
+            'expires_at' => null,
+        ]);
+
+        $renewed = $this->post('/oauth/token', [
+            'grant_type' => 'refresh_token',
+            'client_id' => $client->client_id,
+            'refresh_token' => 'durable-refresh-token',
+        ])->assertOk()
+            ->assertJsonStructure(['access_token', 'refresh_token', 'expires_in', 'scope']);
+
+        $this->assertNotSame('durable-refresh-token', $renewed->json('refresh_token'));
+        $this->assertNotNull(OAuthRefreshToken::query()->oldest()->firstOrFail()->revoked_at);
+        $this->assertNull(OAuthRefreshToken::query()->latest()->firstOrFail()->expires_at);
+        $this->assertSame(2, OAuthRefreshToken::query()->count());
+        $this->assertSame(1, OAuthAccessToken::query()->count());
+
+        $this->call('OPTIONS', '/mcp', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$renewed->json('access_token'),
+        ])->assertNoContent();
+
+        $this->post('/oauth/token', [
+            'grant_type' => 'refresh_token',
+            'client_id' => $client->client_id,
+            'refresh_token' => 'durable-refresh-token',
+        ])->assertStatus(400)->assertJsonPath('error', 'invalid_grant');
+
+        $this->assertNotNull($grant->fresh()->revoked_at);
+        $this->call('OPTIONS', '/mcp', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$renewed->json('access_token'),
+        ])->assertUnauthorized();
     }
 
     public function test_pkce_mismatch_does_not_consume_the_code(): void

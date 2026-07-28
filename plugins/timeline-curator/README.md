@@ -6,4 +6,6 @@ The plugin connects to `https://curator.vumbualabs.com/mcp`. Codex discovers Tim
 
 The plugin does not contain a crawler or an OpenAI API integration. The Codex task performs broad, topic-appropriate research with its available tools, runs a dedicated embeddable-media check for every candidate, and submits only validated cluster, source, media-reference, and feedback-choice metadata to Timeline.
 
+Version 0.4 makes the Timeline MCP server required, reports the installed plugin version to the service, and fails scheduled runs explicitly when reauthentication is required. Timeline access tokens remain short-lived while rotating refresh credentials keep an approved connection active until the user revokes it.
+
 See the repository's [external tester setup guide](../../docs/external-testing.md) for installation, authentication, first-run, update, and troubleshooting instructions.

@@ -5,21 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 
-class OAuthRefreshToken extends Model
+class OAuthGrant extends Model
 {
     use HasUlids;
 
-    protected $table = 'oauth_refresh_tokens';
+    protected $table = 'oauth_grants';
 
     protected $fillable = [
-        'token_hash', 'oauth_client_id', 'oauth_grant_id', 'user_id', 'scopes', 'expires_at', 'revoked_at',
+        'oauth_client_id', 'user_id', 'scopes', 'last_refreshed_at', 'revoked_at',
     ];
 
     protected function casts(): array
     {
         return [
             'scopes' => 'array',
-            'expires_at' => 'datetime',
+            'last_refreshed_at' => 'datetime',
             'revoked_at' => 'datetime',
         ];
     }
@@ -34,8 +34,13 @@ class OAuthRefreshToken extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function grant()
+    public function accessTokens()
     {
-        return $this->belongsTo(OAuthGrant::class, 'oauth_grant_id');
+        return $this->hasMany(OAuthAccessToken::class, 'oauth_grant_id');
+    }
+
+    public function refreshTokens()
+    {
+        return $this->hasMany(OAuthRefreshToken::class, 'oauth_grant_id');
     }
 }

@@ -32,6 +32,8 @@ Open the installer URL, submit the token from `dist/curator-vumbualabs-deploymen
 
 For the existing production database, the migration preserves every tenant, topic, directive, story, and feedback record. Enter the existing owner's email and a new 12+ character password in the install form; the installer updates that account in place. Leave those optional fields blank for a fresh database, then use `/register`.
 
+The durable-authentication migration preserves currently valid refresh credentials and converts them to rotating, until-revoked grants. Credentials that expired before deployment require one final OAuth login. The update also adds user-scoped product-update read state.
+
 ## 4. Verify
 
 1. `/up` reports healthy.
