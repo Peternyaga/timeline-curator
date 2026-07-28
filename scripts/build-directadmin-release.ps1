@@ -53,7 +53,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Unable to export the committed source.' }
     Expand-Archive -LiteralPath $archivePath -DestinationPath $stagingPath
 
-    composer install --working-dir=$stagingPath --no-dev --classmap-authoritative --no-interaction --prefer-dist
+    # The locked dependency graph already includes the required HTTP implementation.
+    # Disabling Composer plugins avoids php-http/discovery hanging during its
+    # pre-autoload hook on Windows release hosts while keeping Laravel scripts enabled.
+    composer install --working-dir=$stagingPath --no-dev --classmap-authoritative --no-interaction --prefer-dist --no-plugins
     if ($LASTEXITCODE -ne 0) { throw 'Production Composer install failed.' }
 
     Copy-Item -Recurse -Force -LiteralPath (Join-Path $frontendPath 'public\build') -Destination (Join-Path $stagingPath 'public\build')
