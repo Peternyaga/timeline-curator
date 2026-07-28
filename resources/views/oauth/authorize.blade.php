@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Authorize {{ $client->name }} — Timeline Curator</title>@vite(['resources/css/app.css', 'resources/js/app.js'])</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Authorize {{ $client->name }} — Timeline Curator</title>@vite('resources/css/app.css')</head>
 <body class="auth-page">
 <main class="auth-card consent-card">
     <p class="eyebrow">AUTHORIZE TIMELINE CURATOR</p><h1>Connect {{ $client->name }}?</h1>

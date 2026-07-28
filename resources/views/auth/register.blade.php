@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Create account — Timeline Curator</title>@vite(['resources/css/app.css', 'resources/js/app.js'])</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Create account — Timeline Curator</title>@vite('resources/css/app.css')</head>
 <body class="auth-page">
 <main class="auth-card">
     <a class="brand" href="{{ route('home') }}">Timeline<span>Curator</span></a>

@@ -4,7 +4,8 @@
             <img
                 src="{{ $media->url }}"
                 alt="{{ $media->alt_text }}"
-                loading="lazy"
+                loading="{{ ($priority ?? false) ? 'eager' : 'lazy' }}"
+                @if($priority ?? false) fetchpriority="high" @endif
                 decoding="async"
                 referrerpolicy="no-referrer"
                 data-media-asset
@@ -33,7 +34,8 @@
                 <img
                     src="{{ $media->thumbnail_url }}"
                     alt="{{ $media->alt_text }}"
-                    loading="lazy"
+                    loading="{{ ($priority ?? false) ? 'eager' : 'lazy' }}"
+                    @if($priority ?? false) fetchpriority="high" @endif
                     decoding="async"
                     referrerpolicy="no-referrer"
                     data-media-asset

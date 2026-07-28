@@ -33,7 +33,7 @@ function New-RandomValue([int]$ByteCount) {
 
 Push-Location $repositoryRoot
 try {
-    if ((git status --porcelain --untracked-files=no).Count -ne 0) {
+    if ((git status --porcelain).Count -ne 0) {
         throw 'Commit or stash tracked repository changes before building a deployment release.'
     }
 

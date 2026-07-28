@@ -46,11 +46,11 @@
 
         @if(! empty($snapshot['media']))
             <div class="story-media public-story-media" aria-label="Story media">
-                @include('partials.story-media-item', ['media' => (object) $snapshot['media'][0], 'hero' => true])
+                @include('partials.story-media-item', ['media' => (object) $snapshot['media'][0], 'hero' => true, 'priority' => true])
                 @if(count($snapshot['media']) > 1)
                     <div class="story-media-gallery">
                         @foreach(array_slice($snapshot['media'], 1) as $media)
-                            @include('partials.story-media-item', ['media' => (object) $media, 'hero' => false])
+                            @include('partials.story-media-item', ['media' => (object) $media, 'hero' => false, 'priority' => false])
                         @endforeach
                     </div>
                 @endif

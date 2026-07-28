@@ -36,7 +36,10 @@
 
     <div id="story-list" data-story-list>
         @forelse($stories as $story)
-            @include('partials.story-card', ['story' => $story])
+            @include('partials.story-card', [
+                'story' => $story,
+                'priorityMedia' => $stories->currentPage() === 1 && $loop->first,
+            ])
         @empty
             <section class="empty" data-empty-state>
                 <p class="eyebrow">BLANK SLATE</p>

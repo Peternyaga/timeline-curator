@@ -6,6 +6,7 @@ use App\Models\StoryCluster;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
 class TimelineUpdatesController extends Controller
@@ -23,9 +24,16 @@ class TimelineUpdatesController extends Controller
         $afterId = $input['after_id'];
 
         if ($afterId !== self::EMPTY_CURSOR_ID) {
-            $cursorStory = StoryCluster::query()->findOrFail($afterId);
+            $cursorPublishedAt = Cache::remember(
+                'timeline.cursor.'.request()->user()->tenant_id.'.'.$afterId,
+                now()->addMinutes(10),
+                fn (): string|false => StoryCluster::query()
+                    ->whereKey($afterId)
+                    ->value('published_at') ?: false,
+            );
+            abort_if($cursorPublishedAt === false, 404);
 
-            if (! $cursorStory->published_at || ! $cursorStory->published_at->equalTo($after)) {
+            if (! Carbon::parse($cursorPublishedAt)->equalTo($after)) {
                 throw ValidationException::withMessages([
                     'after_published_at' => 'The update cursor does not match the referenced story.',
                 ]);
@@ -33,7 +41,7 @@ class TimelineUpdatesController extends Controller
         }
 
         $candidates = StoryCluster::query()
-            ->with(['sources', 'media', 'feedback'])
+            ->forTimeline()
             ->where(function ($query) use ($after, $afterId): void {
                 $query->where('published_at', '>', $after)
                     ->orWhere(function ($query) use ($after, $afterId): void {

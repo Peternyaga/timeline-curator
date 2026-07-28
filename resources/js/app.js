@@ -535,6 +535,9 @@ if (liveFeed) {
     };
     let pending = null;
     let polling = false;
+    let idlePolls = 0;
+    let pollTimer = null;
+    let pollController = null;
 
     const setBanner = (payload) => {
         pending = payload;
@@ -543,18 +546,22 @@ if (liveFeed) {
     };
 
     const poll = async () => {
+        if (polling || pending) {
+            return;
+        }
+
         if (
-            polling
-            || pending
-            || document.visibilityState !== 'visible'
+            document.visibilityState !== 'visible'
             || !navigator.onLine
             || !cursor.publishedAt
             || !cursor.id
         ) {
+            schedulePoll();
             return;
         }
 
         polling = true;
+        pollController = new AbortController();
 
         try {
             const url = new URL(endpoint, window.location.origin);
@@ -566,6 +573,7 @@ if (liveFeed) {
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
+                signal: pollController.signal,
             });
 
             if (!response.ok) {
@@ -574,13 +582,30 @@ if (liveFeed) {
 
             const payload = await response.json();
             if (payload.count > 0 && payload.cursor) {
+                idlePolls = 0;
                 setBanner(payload);
+            } else {
+                idlePolls = Math.min(idlePolls + 1, 3);
             }
-        } catch {
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
             // Polling is best-effort. The next interval retries automatically.
         } finally {
             polling = false;
+            pollController = null;
+            if (!pending) {
+                schedulePoll();
+            }
         }
+    };
+
+    const schedulePoll = (delay = null) => {
+        window.clearTimeout(pollTimer);
+        const backoff = [30_000, 60_000, 120_000, 300_000][idlePolls];
+        const jitter = Math.round(backoff * Math.random() * 0.1);
+        pollTimer = window.setTimeout(poll, delay ?? backoff + jitter);
     };
 
     banner.addEventListener('click', () => {
@@ -635,16 +660,22 @@ if (liveFeed) {
             }, 2800);
         }
 
-        if (hasMore) {
-            window.setTimeout(poll, 100);
-        }
+        schedulePoll(hasMore ? 100 : 30_000);
     });
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
+            idlePolls = 0;
             poll();
         }
     });
-    window.addEventListener('online', poll);
-    window.setInterval(poll, 30_000);
+    window.addEventListener('online', () => {
+        idlePolls = 0;
+        poll();
+    });
+    window.addEventListener('pagehide', () => {
+        window.clearTimeout(pollTimer);
+        pollController?.abort();
+    });
+    schedulePoll();
 }

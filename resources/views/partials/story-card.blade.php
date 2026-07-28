@@ -20,11 +20,11 @@
     </div>
     @if($story->media->isNotEmpty())
         <div class="story-media" aria-label="Story media">
-            @include('partials.story-media-item', ['media' => $story->media->first(), 'hero' => true])
+            @include('partials.story-media-item', ['media' => $story->media->first(), 'hero' => true, 'priority' => $priorityMedia ?? false])
             @if($story->media->count() > 1)
                 <div class="story-media-gallery">
                     @foreach($story->media->skip(1) as $media)
-                        @include('partials.story-media-item', ['media' => $media, 'hero' => false])
+                        @include('partials.story-media-item', ['media' => $media, 'hero' => false, 'priority' => false])
                     @endforeach
                 </div>
             @endif
