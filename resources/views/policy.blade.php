@@ -19,6 +19,28 @@
         </div>
     @endif
 
+    <section class="run-limit-card" aria-labelledby="run-limit-heading">
+        <div>
+            <p class="eyebrow">RUN SCHEDULE</p>
+            <h2 id="run-limit-heading">Daily curation limit</h2>
+            <p>Choose how many scheduled or on-demand curation runs Timeline accepts each day.</p>
+        </div>
+        <form method="post" action="{{ route('policy.run-limit') }}">
+            @csrf @method('PATCH')
+            <label for="daily-run-limit">Runs per day</label>
+            <input
+                id="daily-run-limit"
+                name="daily_run_limit"
+                type="number"
+                min="1"
+                max="10"
+                value="{{ old('daily_run_limit', $dailyRunLimit) }}"
+                required
+            >
+            <button class="button compact" type="submit">Save limit</button>
+        </form>
+    </section>
+
     <div class="policy-grid">
         <section class="policy-column" aria-labelledby="topics-heading">
             <div class="section-heading">

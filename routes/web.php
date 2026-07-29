@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ConnectionController;
+use App\Http\Controllers\CurationSettingsController;
 use App\Http\Controllers\DirectiveController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\OAuthAuthorizationController;
@@ -37,6 +38,7 @@ Route::middleware(['auth', 'tenant.web'])->group(function (): void {
     Route::get('/timeline', TimelineController::class)->name('timeline');
     Route::get('/timeline/updates', TimelineUpdatesController::class)->name('timeline.updates');
     Route::get('/policy', PolicyController::class)->name('policy');
+    Route::patch('/policy/run-limit', CurationSettingsController::class)->name('policy.run-limit');
     Route::get('/updates', [ProductUpdateController::class, 'index'])->name('updates.index');
     Route::post('/updates/read-all', [ProductUpdateController::class, 'readAll'])->name('updates.read-all');
     Route::post('/updates/{update}/read', [ProductUpdateController::class, 'read'])->name('updates.read');

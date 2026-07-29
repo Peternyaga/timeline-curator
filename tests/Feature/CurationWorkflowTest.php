@@ -174,9 +174,9 @@ class CurationWorkflowTest extends TestCase
         $after = $policy->context();
 
         $this->assertSame(0, $before['usage']['runs_used_today']);
-        $this->assertSame(3, $before['usage']['runs_remaining_today']);
+        $this->assertSame(10, $before['usage']['runs_remaining_today']);
         $this->assertSame(1, $after['usage']['runs_used_today']);
-        $this->assertSame(2, $after['usage']['runs_remaining_today']);
+        $this->assertSame(9, $after['usage']['runs_remaining_today']);
         $this->assertSame($before['context_version'], $after['context_version']);
         $instructions = implode(' ', $before['instructions']);
         $this->assertStringContainsString('dedicated media search for every candidate', $instructions);
@@ -194,9 +194,10 @@ class CurationWorkflowTest extends TestCase
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant, ['read:curation-context', 'write:curation-runs']);
         Topic::query()->create(['name' => 'Physics', 'brief' => 'Primary research']);
-        $version = app(CurationPolicyService::class)->context()['context_version'];
+        $policy = app(CurationPolicyService::class);
+        $version = $policy->context()['context_version'];
 
-        foreach (range(1, CurationPolicyService::RUNS_PER_DAY) as $index) {
+        foreach (range(1, $policy->dailyRunLimit()) as $index) {
             AgentRun::query()->create([
                 'context_version' => $version,
                 'exact_queries' => ["physics breakthrough $index"],

@@ -53,7 +53,7 @@ class CurationIngestionService
         if ($queries === [] || count($queries) > 20 || collect($queries)->contains(fn ($query) => ! is_string($query) || trim($query) === '')) {
             throw new CurationException('invalid_query', 'Provide between 1 and 20 non-empty exact queries.');
         }
-        if (AgentRun::query()->where('created_at', '>=', now()->startOfDay())->count() >= CurationPolicyService::RUNS_PER_DAY) {
+        if (AgentRun::query()->where('created_at', '>=', now()->startOfDay())->count() >= $this->policy->dailyRunLimit()) {
             throw new CurationException('quota_exceeded', 'The daily run quota has been reached.');
         }
 

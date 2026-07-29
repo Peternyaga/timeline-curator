@@ -11,7 +11,9 @@ use Illuminate\Support\Collection;
 
 class CurationPolicyService
 {
-    public const RUNS_PER_DAY = 3;
+    public const DEFAULT_RUNS_PER_DAY = 10;
+
+    public const MAX_RUNS_PER_DAY = 10;
 
     private const LEGACY_SIGNALS = [
         'Great source' => 'good_source',
@@ -26,6 +28,7 @@ class CurationPolicyService
     /** @return array<string, mixed> */
     public function context(?string $pluginVersion = null): array
     {
+        $dailyRunLimit = $this->dailyRunLimit();
         $topics = Topic::query()->where('active', true)->orderBy('name')->get(['id', 'name', 'brief']);
         $directives = Directive::query()
             ->where('enabled', true)
@@ -43,7 +46,7 @@ class CurationPolicyService
             'directives' => $directives->toArray(),
             'feedback_summary' => $this->summarizeFeedback($feedback),
             'limits' => [
-                'runs_per_day' => self::RUNS_PER_DAY,
+                'runs_per_day' => $dailyRunLimit,
                 'accepted_clusters_per_run' => 20,
                 'sources_per_run' => 50,
                 'sources_per_cluster' => 5,
@@ -62,7 +65,7 @@ class CurationPolicyService
             'plugin' => $this->pluginStatus($pluginVersion),
             'usage' => [
                 'runs_used_today' => $runsUsedToday,
-                'runs_remaining_today' => max(0, self::RUNS_PER_DAY - $runsUsedToday),
+                'runs_remaining_today' => max(0, $dailyRunLimit - $runsUsedToday),
                 'resets_at' => now()->addDay()->startOfDay()->toIso8601String(),
             ],
             'context_version' => hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR)),
@@ -79,6 +82,14 @@ class CurationPolicyService
                 'Generate balanced story-specific feedback tags.',
             ],
         ];
+    }
+
+    public function dailyRunLimit(): int
+    {
+        return max(1, min(
+            self::MAX_RUNS_PER_DAY,
+            (int) ($this->context->tenant()->daily_run_limit ?? self::DEFAULT_RUNS_PER_DAY),
+        ));
     }
 
     /** @return array<string, bool|string|null> */

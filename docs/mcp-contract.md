@@ -4,7 +4,7 @@ All tools authenticate with a first-party opaque Timeline bearer token issued th
 
 ## `get_curation_context`
 
-Requires `read:curation-context`. Version 0.4 clients provide optional `plugin_version`. The response returns active topics, unexpired directives, recency-weighted explicit feedback signals, deterministic limits, research instructions, plugin compatibility status, an update command, and a SHA-256 `context_version`.
+Requires `read:curation-context`. Version 0.4 clients provide optional `plugin_version`. The response returns active topics, unexpired directives, recency-weighted explicit feedback signals, deterministic limits, research instructions, plugin compatibility status, an update command, and a SHA-256 `context_version`. Users can set their tenant-owned daily run limit from 1–10 on the Policy page; new and existing tenants default to 10 runs per day.
 
 ## `begin_curation_run`
 
