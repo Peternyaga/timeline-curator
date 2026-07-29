@@ -97,10 +97,6 @@ class OAuthTokenController extends Controller
             }
 
             if ($refresh->revoked_at) {
-                if ($refresh->grant && ! $refresh->grant->revoked_at) {
-                    $this->revokeGrant($refresh->grant, 'refresh_token_reuse');
-                }
-
                 return $this->error('invalid_grant', 'The refresh token is invalid, expired, or revoked.');
             }
 
@@ -121,18 +117,28 @@ class OAuthTokenController extends Controller
                 $refresh->update(['oauth_grant_id' => $grant->id]);
             }
 
-            $refresh->update(['revoked_at' => now()]);
             $grant->update(['last_refreshed_at' => now()]);
             Log::info('Timeline OAuth token refreshed.', $this->logContext($grant));
 
-            return $this->tokens($client, $refresh->user_id, $refresh->scopes, $grant);
+            return $this->tokens(
+                $client,
+                $refresh->user_id,
+                $refresh->scopes,
+                $grant,
+                $input['refresh_token'],
+            );
         });
     }
 
-    private function tokens(OAuthClient $client, int $userId, array $scopes, OAuthGrant $grant): JsonResponse
-    {
+    private function tokens(
+        OAuthClient $client,
+        int $userId,
+        array $scopes,
+        OAuthGrant $grant,
+        ?string $existingRefreshToken = null,
+    ): JsonResponse {
         $access = TokenFactory::issue('tl_at_');
-        $refresh = TokenFactory::issue('tl_rt_');
+        $refresh = $existingRefreshToken ?? TokenFactory::issue('tl_rt_');
         $accessTtl = (int) config('oauth.access_token_ttl_minutes');
         $refreshTtl = (int) config('oauth.refresh_token_ttl_days');
         $refreshUntilRevoked = (bool) config('oauth.refresh_token_until_revoked');
@@ -145,16 +151,18 @@ class OAuthTokenController extends Controller
             'scopes' => $scopes,
             'expires_at' => now()->addMinutes($accessTtl),
         ]);
-        OAuthRefreshToken::query()->create([
-            'token_hash' => TokenFactory::hash($refresh),
-            'oauth_client_id' => $client->id,
-            'oauth_grant_id' => $grant->id,
-            'user_id' => $userId,
-            'scopes' => $scopes,
-            'expires_at' => ! $refreshUntilRevoked && $refreshTtl > 0
-                ? now()->addDays($refreshTtl)
-                : null,
-        ]);
+        if ($existingRefreshToken === null) {
+            OAuthRefreshToken::query()->create([
+                'token_hash' => TokenFactory::hash($refresh),
+                'oauth_client_id' => $client->id,
+                'oauth_grant_id' => $grant->id,
+                'user_id' => $userId,
+                'scopes' => $scopes,
+                'expires_at' => ! $refreshUntilRevoked && $refreshTtl > 0
+                    ? now()->addDays($refreshTtl)
+                    : null,
+            ]);
+        }
 
         return response()->json([
             'token_type' => 'Bearer',
@@ -169,18 +177,6 @@ class OAuthTokenController extends Controller
     {
         return response()->json(['error' => $error, 'error_description' => $description], 400)
             ->header('Cache-Control', 'no-store');
-    }
-
-    private function revokeGrant(OAuthGrant $grant, string $reason): void
-    {
-        $revokedAt = now();
-        $grant->update(['revoked_at' => $revokedAt]);
-        $grant->accessTokens()->whereNull('revoked_at')->update(['revoked_at' => $revokedAt]);
-        $grant->refreshTokens()->whereNull('revoked_at')->update(['revoked_at' => $revokedAt]);
-        Log::warning('Timeline OAuth grant revoked.', [
-            ...$this->logContext($grant),
-            'reason' => $reason,
-        ]);
     }
 
     /** @return array<string, int|string|null> */

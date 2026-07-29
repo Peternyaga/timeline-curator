@@ -54,7 +54,7 @@ Recommended schedules are 07:00 and 18:00 in each user's timezone. Each run is a
 ## Security invariants
 
 - MCP and ingestion inputs never accept `tenant_id`.
-- Access tokens are short-lived opaque values stored only as hashes. Rotating refresh tokens keep approved Codex installations connected until the user revokes the durable grant.
+- Access tokens are short-lived opaque values stored only as hashes. Reusable refresh credentials keep approved Codex installations connected until the user revokes the durable grant.
 - Users can review and revoke Codex installations from the Connections page. Timeline records secret-free token health events and warns when scheduled curation becomes stale.
 - Authenticated pages include a version-controlled update center with user-scoped unread state and actionable plugin release notices.
 - Tenant context is cleared after every request.
