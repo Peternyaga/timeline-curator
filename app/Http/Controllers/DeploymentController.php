@@ -83,7 +83,10 @@ HTML);
                 $this->setExistingOwnerPassword($request);
             }
             if ($optimizeProduction) {
-                Artisan::call('optimize');
+                // Do not rebuild caches inside this request. An update request can
+                // itself be booted from the previous release's cached route table,
+                // which would immediately write those stale routes back to disk.
+                // With caches cleared, the next request boots from the new files.
                 if (function_exists('opcache_reset')) {
                     @opcache_reset();
                 }

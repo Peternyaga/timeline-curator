@@ -101,4 +101,30 @@ class DeploymentInstallerTest extends TestCase
         $this->assertFileExists($this->completedPath);
         $this->get('/deployment/install')->assertNotFound();
     }
+
+    public function test_new_views_can_render_before_the_previous_route_cache_is_cleared(): void
+    {
+        $viewPaths = [
+            resource_path('views/welcome.blade.php'),
+            resource_path('views/auth/register.blade.php'),
+            resource_path('views/layouts/app.blade.php'),
+            resource_path('views/timeline.blade.php'),
+        ];
+
+        foreach ($viewPaths as $viewPath) {
+            $this->assertStringNotContainsString(
+                "route('guide')",
+                File::get($viewPath),
+                "{$viewPath} must not require the new named route while an older route cache may still be active.",
+            );
+        }
+    }
+
+    public function test_web_installer_does_not_rebuild_caches_from_the_booted_release(): void
+    {
+        $controller = File::get(app_path('Http/Controllers/DeploymentController.php'));
+
+        $this->assertStringContainsString("Artisan::call('optimize:clear');", $controller);
+        $this->assertStringNotContainsString("Artisan::call('optimize');", $controller);
+    }
 }

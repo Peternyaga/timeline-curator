@@ -16,7 +16,7 @@
         <nav class="landing-nav" aria-label="Homepage">
             <a href="#who-it-serves">Who it serves</a>
             <a href="#how-it-works">How it works</a>
-            <a href="{{ route('guide') }}">Setup guide</a>
+            <a href="{{ url('/guide') }}">Setup guide</a>
         </nav>
 
         <div class="landing-account">
@@ -42,7 +42,7 @@
                     @else
                         <a class="button landing-primary" href="{{ route('register') }}">Create your Timeline</a>
                     @endauth
-                    <a class="landing-guide-link" href="{{ route('guide') }}">
+                    <a class="landing-guide-link" href="{{ url('/guide') }}">
                         <span>Read the setup guide</span>
                         <span aria-hidden="true">↗</span>
                     </a>
@@ -193,7 +193,7 @@
                 @else
                     <a class="button landing-primary" href="{{ route('register') }}">Create your Timeline</a>
                 @endauth
-                <a href="{{ route('guide') }}">See the complete setup</a>
+                <a href="{{ url('/guide') }}">See the complete setup</a>
             </div>
         </section>
     </main>
@@ -202,7 +202,7 @@
         <a class="landing-brand" href="{{ route('home') }}"><span>Timeline</span> Curator</a>
         <p>A private curation workspace for people who want to choose what reaches them.</p>
         <nav aria-label="Footer">
-            <a href="{{ route('guide') }}">Setup guide</a>
+            <a href="{{ url('/guide') }}">Setup guide</a>
             @guest<a href="{{ route('login') }}">Sign in</a>@endguest
         </nav>
     </footer>

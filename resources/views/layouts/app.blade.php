@@ -17,7 +17,7 @@
             Updates @if($unreadProductUpdates->isNotEmpty())<span class="nav-badge">{{ $unreadProductUpdates->count() }}</span>@endif
         </a>
         <a href="{{ route('connections.index') }}" @if(request()->routeIs('connections.*')) aria-current="page" @endif>Connections</a>
-        <a href="{{ route('guide') }}" @if(request()->routeIs('guide')) aria-current="page" @endif>Guide</a>
+        <a href="{{ url('/guide') }}" @if(request()->routeIs('guide')) aria-current="page" @endif>Guide</a>
     </nav>
     <div class="identity">
         <span>{{ auth()->user()->name }}</span>
@@ -42,7 +42,7 @@
     <a href="{{ route('connections.index') }}" @if(request()->routeIs('connections.*')) aria-current="page" @endif>
         <span aria-hidden="true">○</span> Connections
     </a>
-    <a href="{{ route('guide') }}" @if(request()->routeIs('guide')) aria-current="page" @endif>
+    <a href="{{ url('/guide') }}" @if(request()->routeIs('guide')) aria-current="page" @endif>
         <span aria-hidden="true">?</span> Guide
     </a>
 </nav>

@@ -47,7 +47,7 @@
                 <p>Add a topic, install the Timeline Curator plugin, then schedule your personal Codex task. Precision comes first, so empty runs are valid.</p>
                 <div class="empty-actions">
                     <a class="button" href="{{ route('policy') }}">Configure your policy</a>
-                    <a class="text-link" href="{{ route('guide') }}">Follow the setup guide</a>
+                    <a class="text-link" href="{{ url('/guide') }}">Follow the setup guide</a>
                 </div>
             </section>
         @endforelse

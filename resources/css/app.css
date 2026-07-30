@@ -1277,8 +1277,8 @@ summary:focus-visible,
 .landing-artwork-frame img {
     display: block;
     width: 100%;
-    aspect-ratio: 1731 / 909;
-    object-fit: cover;
+    height: auto;
+    object-fit: contain;
 }
 .landing-artwork figcaption {
     display: flex;

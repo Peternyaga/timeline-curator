@@ -15,7 +15,7 @@
         @if ($errors->any())<div class="form-errors"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
         <button class="button" type="submit">Create account</button>
     </form>
-    <p class="auth-guide-link">New to Codex plugins? <a href="{{ route('guide') }}">See the friendly setup guide</a>.</p>
+    <p class="auth-guide-link">New to Codex plugins? <a href="{{ url('/guide') }}">See the friendly setup guide</a>.</p>
     <p class="auth-switch">Already registered? <a href="{{ route('login') }}">Sign in</a></p>
 </main>
 <script>document.getElementById('timezone').value = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';</script>
