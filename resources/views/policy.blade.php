@@ -7,8 +7,8 @@
 <main class="policy-shell">
     <header class="policy-heading">
         <p class="eyebrow">CURATION POLICY</p>
-        <h1>Train your task</h1>
-        <p>Define the signal you want. Changes are picked up by the next curation run.</p>
+        <h1>Choose what Timeline should follow</h1>
+        <p>Set the subjects, source standards, depth, and boundaries for the next curation run.</p>
     </header>
 
     @if(session('status'))<p class="flash">{{ session('status') }}</p>@endif

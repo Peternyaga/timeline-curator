@@ -15,8 +15,8 @@
 >
     <header class="feed-heading">
         <div>
-            <p class="eyebrow">LATEST RESEARCH</p>
-            <h1>Your private signal</h1>
+            <p class="eyebrow">YOUR TIMELINE</p>
+            <h1>Stories selected for your topics</h1>
         </div>
         <p><span data-story-total>{{ $stories->total() }}</span> evidence-backed clusters</p>
     </header>
@@ -45,7 +45,10 @@
                 <p class="eyebrow">BLANK SLATE</p>
                 <h2>Your task has not published a story yet.</h2>
                 <p>Add a topic, install the Timeline Curator plugin, then schedule your personal Codex task. Precision comes first, so empty runs are valid.</p>
-                <a class="button" href="{{ route('policy') }}">Configure your policy</a>
+                <div class="empty-actions">
+                    <a class="button" href="{{ route('policy') }}">Configure your policy</a>
+                    <a class="text-link" href="{{ route('guide') }}">Follow the setup guide</a>
+                </div>
             </section>
         @endforelse
     </div>

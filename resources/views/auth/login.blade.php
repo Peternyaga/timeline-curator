@@ -3,8 +3,8 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in — Timeline Curator</title>@vite('resources/css/app.css')</head>
 <body class="auth-page">
 <main class="auth-card">
-    <a class="brand" href="{{ route('home') }}">Timeline<span>Curator</span></a>
-    <p class="eyebrow">WELCOME BACK</p><h1>Sign in to your timeline</h1>
+    <a class="brand" href="{{ route('home') }}"><span>TIMELINE</span> CURATOR</a>
+    <p class="eyebrow">ACCOUNT ACCESS</p><h1>Sign in to Timeline</h1>
     <form class="stack" method="post" action="{{ route('login') }}">
         @csrf
         <label>Email<input name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="email"></label>

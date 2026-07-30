@@ -117,9 +117,9 @@
     </article>
 
     <aside class="public-story-cta">
-        <p class="eyebrow">YOUR OWN SIGNAL</p>
-        <h2>Build a timeline around what matters to you.</h2>
-        <p>Choose your topics and let your private curator bring back verified stories with useful context.</p>
+        <p class="eyebrow">CREATE YOUR OWN TIMELINE</p>
+        <h2>Follow the topics you choose.</h2>
+        <p>Set the coverage and let your Codex curator return verified stories with useful context.</p>
         <a class="button" href="{{ route('register') }}">Create your Timeline</a>
     </aside>
 </main>

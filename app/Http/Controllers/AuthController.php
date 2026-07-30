@@ -66,7 +66,7 @@ class AuthController extends Controller
         Auth::login($user, remember: true);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('timeline'));
+        return redirect()->route('guide')->with('status', 'Welcome to Timeline! Let’s get your first feed running.');
     }
 
     public function logout(Request $request): RedirectResponse

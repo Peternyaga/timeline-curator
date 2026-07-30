@@ -12,7 +12,8 @@ class HomepageTest extends TestCase
             ->assertOk()
             ->assertSee('images/timeline-home-hero-720.jpg')
             ->assertSee('images/timeline-home-hero-1400.jpg')
-            ->assertSee('Timeline Curator presented as an editorial collage')
+            ->assertSee('An editorial collage representing stories gathered into a connected Timeline.')
+            ->assertSee(route('guide'))
             ->assertDontSee('<script type="module"', false);
     }
 }

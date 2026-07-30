@@ -5,6 +5,7 @@ use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\CurationSettingsController;
 use App\Http\Controllers\DirectiveController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\GuideController;
 use App\Http\Controllers\OAuthAuthorizationController;
 use App\Http\Controllers\PolicyController;
 use App\Http\Controllers\ProductUpdateController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\TopicController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
+Route::get('/guide', GuideController::class)->name('guide');
 Route::get('/s/{share}', PublicStoryShareController::class)
     ->middleware('throttle:120,1')
     ->name('shares.show');

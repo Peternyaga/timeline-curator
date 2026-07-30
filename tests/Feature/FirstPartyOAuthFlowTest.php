@@ -23,7 +23,8 @@ class FirstPartyOAuthFlowTest extends TestCase
             'password' => 'correct-horse-battery-staple',
             'password_confirmation' => 'correct-horse-battery-staple',
             'timezone' => 'Africa/Nairobi',
-        ])->assertRedirect('/timeline');
+        ])->assertRedirect('/guide')
+            ->assertSessionHas('status');
 
         $user = User::query()->firstOrFail();
         $this->assertAuthenticatedAs($user);
