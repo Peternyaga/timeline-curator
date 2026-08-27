@@ -12,6 +12,9 @@
     <a href="{{ route('timeline') }}" class="brand"><span>TIMELINE</span> CURATOR</a>
     <nav class="desktop-nav" aria-label="Primary">
         <a href="{{ route('timeline') }}" @if(request()->routeIs('timeline*')) aria-current="page" @endif>Feed</a>
+        <a href="{{ route('jobs.matches') }}" @if(request()->routeIs('jobs.*')) aria-current="page" @endif>
+            Jobs @if($jobActionCount > 0)<span class="nav-badge">{{ $jobActionCount }}</span>@endif
+        </a>
         <a href="{{ route('policy') }}" @if(request()->routeIs('policy') || request()->routeIs('topics.*') || request()->routeIs('directives.*')) aria-current="page" @endif>Policy</a>
         <a href="{{ route('updates.index') }}" @if(request()->routeIs('updates.*')) aria-current="page" @endif>
             Updates @if($unreadProductUpdates->isNotEmpty())<span class="nav-badge">{{ $unreadProductUpdates->count() }}</span>@endif
@@ -35,6 +38,9 @@
     </a>
     <a href="{{ route('policy') }}" @if(request()->routeIs('policy') || request()->routeIs('topics.*') || request()->routeIs('directives.*')) aria-current="page" @endif>
         <span aria-hidden="true">☷</span> Policy
+    </a>
+    <a href="{{ route('jobs.matches') }}" @if(request()->routeIs('jobs.*')) aria-current="page" @endif>
+        <span aria-hidden="true">⌁</span> Jobs @if($jobActionCount > 0)<span class="nav-badge">{{ $jobActionCount }}</span>@endif
     </a>
     <a href="{{ route('updates.index') }}" @if(request()->routeIs('updates.*')) aria-current="page" @endif>
         <span aria-hidden="true">!</span> Updates

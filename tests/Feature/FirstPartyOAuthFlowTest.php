@@ -95,6 +95,31 @@ class FirstPartyOAuthFlowTest extends TestCase
             ->assertJsonPath('error', 'invalid_grant');
     }
 
+    public function test_story_only_client_sees_only_the_permissions_it_requests(): void
+    {
+        $client = $this->postJson('/oauth/register', [
+            'client_name' => 'Legacy Codex',
+            'redirect_uris' => ['http://127.0.0.1:49152/callback'],
+            'token_endpoint_auth_method' => 'none',
+        ])->json();
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/oauth/authorize?'.http_build_query([
+            'response_type' => 'code',
+            'client_id' => $client['client_id'],
+            'redirect_uri' => $client['redirect_uris'][0],
+            'state' => 'legacy-state',
+            'code_challenge' => str_repeat('a', 43),
+            'code_challenge_method' => 'S256',
+            'scope' => 'read:curation-context write:curation-runs write:story-batches',
+        ]));
+
+        $response->assertOk()
+            ->assertSee('Publish evidence-backed stories')
+            ->assertDontSee('job-search preferences')
+            ->assertDontSee('application profile');
+    }
+
     public function test_refresh_tokens_remain_reusable_until_the_grant_is_revoked(): void
     {
         config()->set('oauth.refresh_token_until_revoked', true);

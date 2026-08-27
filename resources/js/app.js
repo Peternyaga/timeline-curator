@@ -10,6 +10,34 @@ document.addEventListener('submit', (event) => {
     }
 });
 
+document.addEventListener('submit', (event) => {
+    if (
+        event.target.matches('[data-approve-application]')
+        && !window.confirm('Approve one application attempt for this job? Codex may tailor truthful materials and submit them to the listed employer.')
+    ) {
+        event.preventDefault();
+    }
+
+    if (
+        event.target.matches('[data-delete-application]')
+        && !window.confirm('Permanently delete this application, its answers, materials, and audit trail?')
+    ) {
+        event.preventDefault();
+    }
+});
+
+document.querySelectorAll('[data-copy-job-prompt]').forEach((button) => {
+    button.addEventListener('click', async () => {
+        const status = button.parentElement?.querySelector('[data-copy-job-status]');
+        try {
+            await navigator.clipboard.writeText(button.dataset.prompt);
+            if (status) status.textContent = 'Prompt copied.';
+        } catch {
+            if (status) status.textContent = 'Copy was blocked. Select the prompt from the button details and copy it manually.';
+        }
+    });
+});
+
 document.querySelectorAll('[data-preset-catalog]').forEach((catalog) => {
     const form = catalog.closest('[data-preset-form]');
     const search = catalog.querySelector('[data-preset-search]');

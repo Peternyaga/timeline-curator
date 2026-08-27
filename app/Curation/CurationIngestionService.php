@@ -47,11 +47,13 @@ class CurationIngestionService
 
     public function __construct(private CurationPolicyService $policy) {}
 
-    public function begin(string $contextVersion, array $queries, ?string $skillVersion = null): AgentRun
+    public function begin(string $contextVersion, array $queries, ?string $skillVersion = null, array $jobQueries = []): AgentRun
     {
         $this->assertCurrentPolicy($contextVersion);
-        if ($queries === [] || count($queries) > 20 || collect($queries)->contains(fn ($query) => ! is_string($query) || trim($query) === '')) {
-            throw new CurationException('invalid_query', 'Provide between 1 and 20 non-empty exact queries.');
+        $invalidQueries = fn (array $items): bool => count($items) > 20
+            || collect($items)->contains(fn ($query) => ! is_string($query) || trim($query) === '');
+        if (($queries === [] && $jobQueries === []) || $invalidQueries($queries) || $invalidQueries($jobQueries)) {
+            throw new CurationException('invalid_query', 'Provide one or more non-empty story or job queries, with at most 20 of each.');
         }
         if (AgentRun::query()->where('created_at', '>=', now()->startOfDay())->count() >= $this->policy->dailyRunLimit()) {
             throw new CurationException('quota_exceeded', 'The daily run quota has been reached.');
@@ -60,6 +62,7 @@ class CurationIngestionService
         return AgentRun::query()->create([
             'context_version' => $contextVersion,
             'exact_queries' => array_values($queries),
+            'job_queries' => array_values($jobQueries),
             'skill_version' => $skillVersion,
         ]);
     }

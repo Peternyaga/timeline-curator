@@ -1,11 +1,17 @@
 <?php
 
+use App\Http\Controllers\ApplicationQuestionnaireController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\CurationSettingsController;
 use App\Http\Controllers\DirectiveController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\GuideController;
+use App\Http\Controllers\JobApplicationController;
+use App\Http\Controllers\JobFeedbackController;
+use App\Http\Controllers\JobProfileController;
+use App\Http\Controllers\JobProfileDocumentController;
+use App\Http\Controllers\JobsController;
 use App\Http\Controllers\OAuthAuthorizationController;
 use App\Http\Controllers\PolicyController;
 use App\Http\Controllers\ProductUpdateController;
@@ -39,6 +45,19 @@ Route::middleware('auth')->group(function (): void {
 Route::middleware(['auth', 'tenant.web'])->group(function (): void {
     Route::get('/timeline', TimelineController::class)->name('timeline');
     Route::get('/timeline/updates', TimelineUpdatesController::class)->name('timeline.updates');
+    Route::get('/jobs', [JobsController::class, 'matches'])->name('jobs.matches');
+    Route::get('/jobs/applications', [JobsController::class, 'applications'])->name('jobs.applications');
+    Route::get('/jobs/profile', [JobsController::class, 'profile'])->name('jobs.profile');
+    Route::put('/jobs/profile', [JobProfileController::class, 'update'])->name('jobs.profile.update');
+    Route::post('/jobs/profile/documents', [JobProfileDocumentController::class, 'store'])->name('jobs.documents.store');
+    Route::get('/jobs/profile/documents/{document}', [JobProfileDocumentController::class, 'download'])->name('jobs.documents.download');
+    Route::delete('/jobs/profile/documents/{document}', [JobProfileDocumentController::class, 'destroy'])->name('jobs.documents.destroy');
+    Route::post('/jobs/{job}/feedback', [JobFeedbackController::class, 'store'])->name('jobs.feedback.store');
+    Route::post('/jobs/{job}/approve', [JobApplicationController::class, 'approve'])->name('jobs.applications.approve');
+    Route::post('/jobs/applications/{application}/cancel', [JobApplicationController::class, 'cancel'])->name('jobs.applications.cancel');
+    Route::delete('/jobs/applications/{application}', [JobApplicationController::class, 'destroy'])->name('jobs.applications.destroy');
+    Route::get('/jobs/applications/{application}/materials/{material}', [JobApplicationController::class, 'material'])->name('jobs.applications.materials.download');
+    Route::put('/jobs/questionnaires/{questionnaire}', [ApplicationQuestionnaireController::class, 'update'])->name('jobs.questionnaires.update');
     Route::get('/policy', PolicyController::class)->name('policy');
     Route::patch('/policy/run-limit', CurationSettingsController::class)->name('policy.run-limit');
     Route::get('/updates', [ProductUpdateController::class, 'index'])->name('updates.index');

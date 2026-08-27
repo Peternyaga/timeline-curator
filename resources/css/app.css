@@ -1573,6 +1573,71 @@ summary:focus-visible,
     .landing-footer nav { justify-content: flex-start; }
 }
 
+/* Job search companion */
+.jobs-shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 54px 0 110px; }
+.jobs-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 28px; margin-bottom: 28px; }
+.jobs-header h1 { margin: 6px 0 10px; font-size: clamp(44px, 7vw, 78px); line-height: .96; letter-spacing: -.055em; }
+.jobs-header p:last-child { max-width: 620px; line-height: 1.6; }
+.jobs-tabs { display: flex; gap: 8px; margin: 24px 0 36px; border-bottom: 1px solid rgba(16, 37, 27, .25); }
+.jobs-tabs a { padding: 12px 18px; color: var(--forest); text-decoration: none; }
+.jobs-tabs a[aria-current="page"] { background: var(--forest); color: white; }
+.status-pill { display: inline-flex; width: fit-content; padding: 6px 10px; border: 1px solid rgba(16, 37, 27, .28); background: #ede9de; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.status-pill.success { background: var(--signal); color: var(--ink); }
+.jobs-empty, .run-now-panel, .profile-readiness, .job-profile-form > section, .document-panel { padding: clamp(24px, 5vw, 48px); border: 1px solid rgba(16, 37, 27, .22); background: #fffdf8; box-shadow: 8px 8px 0 rgba(165, 79, 46, .08); }
+.jobs-empty { text-align: center; }
+.jobs-empty h2, .run-now-panel h2, .job-card h2, .application-card h2, .job-profile-form h2, .document-panel h2 { margin: 5px 0 12px; font-size: clamp(26px, 4vw, 38px); letter-spacing: -.04em; }
+.job-card-list, .application-list { display: grid; gap: 28px; }
+.job-card, .application-card { padding: clamp(22px, 4vw, 38px); border: 1px solid rgba(16, 37, 27, .24); background: #fffdf8; box-shadow: 7px 7px 0 rgba(165, 79, 46, .07); }
+.job-card > header, .application-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.job-meta { color: #526158; line-height: 1.5; }
+.job-dates { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 20px 0; padding: 13px 0; border-block: 1px solid rgba(16, 37, 27, .14); font-size: 13px; }
+.salary-line { padding: 10px 14px; background: #e8eee4; }
+.job-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; margin: 26px 0; }
+.job-columns section { padding: 18px; background: #f3efe5; }
+.job-columns h3 { margin-top: 0; font-size: 16px; }
+.job-columns li { margin-bottom: 8px; line-height: 1.45; }
+.job-source-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+.job-source-row a { color: var(--forest); font-weight: 750; }
+.job-actions, .application-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-top: 22px; }
+.job-actions p { flex: 1 1 340px; margin: 0; color: #526158; font-size: 13px; }
+.run-now-panel { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 20px; margin-bottom: 30px; border-top: 5px solid var(--signal); background: var(--forest); color: white; }
+.run-now-panel .eyebrow { color: var(--signal); }
+.run-now-panel .button { background: var(--signal); color: var(--ink); }
+.questionnaire-form { margin-top: 24px; padding: 22px; border-left: 5px solid var(--rust); background: #f3efe5; }
+.generated-field { display: grid; gap: 7px; margin: 18px 0; }
+.generated-field input:not([type="checkbox"]), .generated-field textarea, .generated-field select, .job-profile-form input:not([type="checkbox"]), .job-profile-form textarea, .job-profile-form select, .document-upload input, .document-upload select { width: 100%; min-height: 45px; padding: 10px 12px; border: 1px solid rgba(16, 37, 27, .28); border-radius: 0; background: #fffdf8; }
+.generated-field textarea, .job-profile-form textarea { min-height: 100px; resize: vertical; }
+.generated-field.is-sensitive { padding: 16px; border: 1px solid #9b5a43; background: #fff5ec; }
+.sensitive-note { margin: 0; color: #783b27; font-size: 13px; }
+.save-answer { font-size: 13px; }
+.profile-readiness { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; background: #e8eee4; }
+.profile-readiness div { display: grid; gap: 6px; }
+.job-profile-form { display: grid; gap: 28px; }
+.job-profile-form section { display: grid; gap: 18px; }
+.job-profile-form label, .document-upload label { display: grid; gap: 7px; font-weight: 700; }
+.job-profile-form small { font-weight: 400; color: #526158; }
+.job-profile-form fieldset { display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; border: 1px solid rgba(16, 37, 27, .2); }
+.job-profile-form fieldset label, .enable-job-search { display: flex; align-items: center; gap: 8px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
+.enable-job-search { padding: 20px; background: var(--signal); font-weight: 800; }
+.document-panel { margin-top: 34px; }
+.document-list { margin: 20px 0; }
+.document-list > div { display: flex; justify-content: space-between; gap: 18px; padding: 12px 0; border-bottom: 1px solid rgba(16, 37, 27, .15); }
+.document-list span, .document-list form { display: inline-flex; align-items: center; gap: 12px; }
+.document-upload { margin-top: 26px; padding-top: 24px; border-top: 1px solid rgba(16, 37, 27, .2); }
+.danger { color: #8f2d24; }
+
+@media (max-width: 800px) {
+    .jobs-shell { width: min(100% - 24px, 1180px); padding-top: 30px; }
+    .jobs-header, .job-card > header, .application-card > header { flex-direction: column; }
+    .jobs-tabs { overflow-x: auto; }
+    .jobs-tabs a { flex: 1; text-align: center; }
+    .run-now-panel { grid-template-columns: 1fr; }
+    .profile-readiness { grid-template-columns: 1fr; }
+    .document-list > div { align-items: flex-start; flex-direction: column; }
+    .mobile-nav a { min-width: 52px; padding-inline: 4px; }
+}
+
 @media (max-width: 520px) {
     .landing-brand { font-size: 13px; }
     .landing-hero { padding-top: 46px; }
@@ -1871,7 +1936,7 @@ summary:focus-visible,
         bottom: 0;
         left: 0;
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
         border-top: 1px solid var(--line);
         background: rgba(255, 253, 248, .96);

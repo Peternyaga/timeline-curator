@@ -185,7 +185,7 @@ class CurationWorkflowTest extends TestCase
         $outdated = $policy->context('0.3.0+codex.old');
         $this->assertTrue($outdated['plugin']['update_available']);
         $this->assertFalse($outdated['plugin']['supported']);
-        $this->assertSame('0.4.0', $outdated['plugin']['current_version']);
+        $this->assertSame('0.5.0', $outdated['plugin']['current_version']);
         $this->assertSame($before['context_version'], $outdated['context_version']);
     }
 

@@ -19,7 +19,7 @@ class McpController extends Controller
     public function __invoke(Request $request, CurationTools $tools, TenantContext $tenant): Response
     {
         $server = Server::builder()
-            ->setServerInfo('Timeline Curator', '0.4.0')
+            ->setServerInfo('Timeline Curator', '0.5.0')
             ->setSession(new FileSessionStore(
                 rtrim((string) config('mcp.session_path'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$tenant->id(),
                 (int) config('mcp.session_ttl'),
@@ -34,7 +34,8 @@ class McpController extends Controller
                 'type' => 'object',
                 'properties' => [
                     'context_version' => ['type' => 'string'],
-                    'exact_queries' => ['type' => 'array', 'items' => ['type' => 'string'], 'minItems' => 1, 'maxItems' => 20],
+                    'exact_queries' => ['type' => 'array', 'items' => ['type' => 'string'], 'maxItems' => 20],
+                    'job_queries' => ['type' => 'array', 'items' => ['type' => 'string'], 'maxItems' => 20],
                     'skill_version' => ['type' => ['string', 'null']],
                 ],
                 'required' => ['context_version', 'exact_queries'],
@@ -130,6 +131,46 @@ class McpController extends Controller
                 ],
                 'required' => ['run_id', 'context_version', 'stories'],
             ])
+            ->addTool([$tools, 'submitJobBatch'], 'submit_job_batch', description: 'Validate and publish up to ten current, evidence-backed job matches for an active combined run.', inputSchema: $this->jobBatchSchema())
+            ->addTool([$tools, 'claimNextApplication'], 'claim_next_application', description: 'Atomically claim one user-approved job application for 30 minutes.', inputSchema: [
+                'type' => 'object',
+                'properties' => ['client_attempt_id' => ['type' => 'string', 'maxLength' => 128]],
+                'required' => ['client_attempt_id'],
+            ])
+            ->addTool([$tools, 'getProfileDocument'], 'get_profile_document', description: 'Retrieve one private profile document included in the approved application snapshot.', inputSchema: $this->claimResourceSchema(['document_id']))
+            ->addTool([$tools, 'saveApplicationMaterials'], 'save_application_materials', description: 'Retain the exact truthful materials generated for a claimed application.', inputSchema: [
+                'type' => 'object',
+                'properties' => [
+                    'application_id' => ['type' => 'string'],
+                    'claim_token' => ['type' => 'string'],
+                    'materials' => [
+                        'type' => 'array', 'minItems' => 1, 'maxItems' => 5,
+                        'items' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'kind' => ['type' => 'string', 'enum' => ['resume', 'cover_letter', 'email_body', 'supporting', 'answer_attachment']],
+                                'filename' => ['type' => ['string', 'null']],
+                                'mime_type' => ['type' => 'string'],
+                                'encoding' => ['type' => 'string', 'enum' => ['utf8', 'base64']],
+                                'content' => ['type' => 'string'],
+                                'fact_paths' => ['type' => 'array', 'minItems' => 1, 'items' => ['type' => 'string']],
+                            ],
+                            'required' => ['kind', 'content', 'fact_paths'],
+                        ],
+                    ],
+                ],
+                'required' => ['application_id', 'claim_token', 'materials'],
+            ])
+            ->addTool([$tools, 'requestApplicationInformation'], 'request_application_information', description: 'Pause a claimed application and create a safe server-rendered form for missing facts.', inputSchema: $this->questionnaireSchema())
+            ->addTool([$tools, 'recordApplicationOutcome'], 'record_application_outcome', description: 'Record a confirmed, unconfirmed, blocked, or failed application outcome.', inputSchema: [
+                'type' => 'object',
+                'properties' => [
+                    'application_id' => ['type' => 'string'], 'claim_token' => ['type' => 'string'],
+                    'status' => ['type' => 'string', 'enum' => ['submitted', 'attempted_unconfirmed', 'needs_manual_action', 'failed']],
+                    'evidence' => ['type' => 'object'], 'reason' => ['type' => ['string', 'null'], 'maxLength' => 2000],
+                ],
+                'required' => ['application_id', 'claim_token', 'status'],
+            ])
             ->addTool([$tools, 'completeCurationRun'], 'complete_curation_run', description: 'Finalize an active curation run as completed, empty, or failed.', inputSchema: [
                 'type' => 'object',
                 'properties' => [
@@ -154,5 +195,94 @@ class McpController extends Controller
         ]));
 
         return response((string) $psrResponse->getBody(), $psrResponse->getStatusCode(), $psrResponse->getHeaders());
+    }
+
+    private function jobBatchSchema(): array
+    {
+        $stringList = fn (int $min, int $max): array => ['type' => 'array', 'minItems' => $min, 'maxItems' => $max, 'items' => ['type' => 'string', 'maxLength' => 600]];
+
+        return [
+            'type' => 'object',
+            'properties' => [
+                'run_id' => ['type' => 'string'], 'context_version' => ['type' => 'string'],
+                'jobs' => [
+                    'type' => 'array', 'minItems' => 1, 'maxItems' => 10,
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'client_item_id' => ['type' => 'string', 'maxLength' => 128], 'title' => ['type' => 'string', 'maxLength' => 255],
+                            'employer' => ['type' => 'string', 'maxLength' => 255], 'canonical_url' => ['type' => 'string', 'format' => 'uri'],
+                            'application_url' => ['type' => ['string', 'null'], 'format' => 'uri'], 'application_channel' => ['type' => 'string', 'enum' => ['web', 'email']],
+                            'application_email' => ['type' => ['string', 'null'], 'format' => 'email'], 'location' => ['type' => ['string', 'null']],
+                            'workplace_type' => ['type' => ['string', 'null']], 'employment_type' => ['type' => ['string', 'null']],
+                            'salary' => ['type' => ['object', 'null']], 'posted_at' => ['type' => ['string', 'null'], 'format' => 'date-time'],
+                            'deadline_at' => ['type' => ['string', 'null'], 'format' => 'date-time'], 'summary_points' => $stringList(1, 6),
+                            'requirements' => $stringList(0, 12), 'match_points' => $stringList(1, 6), 'gaps' => $stringList(0, 6),
+                            'application_instructions' => ['type' => ['string', 'null'], 'maxLength' => 2000],
+                            'sources' => [
+                                'type' => 'array', 'minItems' => 1, 'maxItems' => 5,
+                                'items' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'title' => ['type' => 'string'], 'url' => ['type' => 'string', 'format' => 'uri'],
+                                        'role' => ['type' => 'string', 'enum' => ['primary', 'supporting']],
+                                        'published_at' => ['type' => ['string', 'null'], 'format' => 'date-time'],
+                                    ],
+                                    'required' => ['title', 'url', 'role'],
+                                ],
+                            ],
+                            'feedback_tags' => [
+                                'type' => 'array', 'minItems' => 4, 'maxItems' => 6,
+                                'items' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'id' => ['type' => 'string'], 'label' => ['type' => 'string'],
+                                        'signal' => ['type' => 'string', 'enum' => ['more_like_this', 'less_like_this', 'accurate_match', 'inaccurate_match', 'good_source', 'bad_source', 'timely', 'stale', 'eligible', 'ineligible', 'salary_fit', 'salary_mismatch']],
+                                    ],
+                                    'required' => ['id', 'label', 'signal'],
+                                ],
+                            ],
+                        ],
+                        'required' => ['client_item_id', 'title', 'employer', 'canonical_url', 'application_channel', 'summary_points', 'match_points', 'sources', 'feedback_tags'],
+                    ],
+                ],
+            ],
+            'required' => ['run_id', 'context_version', 'jobs'],
+        ];
+    }
+
+    private function claimResourceSchema(array $extraRequired): array
+    {
+        $properties = ['application_id' => ['type' => 'string'], 'claim_token' => ['type' => 'string']];
+        foreach ($extraRequired as $field) {
+            $properties[$field] = ['type' => 'string'];
+        }
+
+        return ['type' => 'object', 'properties' => $properties, 'required' => ['application_id', 'claim_token', ...$extraRequired]];
+    }
+
+    private function questionnaireSchema(): array
+    {
+        return [
+            'type' => 'object',
+            'properties' => [
+                'application_id' => ['type' => 'string'], 'claim_token' => ['type' => 'string'],
+                'message' => ['type' => ['string', 'null']],
+                'fields' => [
+                    'type' => 'array', 'minItems' => 1, 'maxItems' => 20,
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'string'], 'label' => ['type' => 'string'], 'help_text' => ['type' => ['string', 'null']],
+                            'type' => ['type' => 'string', 'enum' => ['short_text', 'long_text', 'email', 'phone', 'number', 'date', 'single_select', 'multi_select', 'boolean', 'file']],
+                            'classification' => ['type' => 'string', 'enum' => ['normal', 'sensitive', 'legal']],
+                            'required' => ['type' => 'boolean'], 'choices' => ['type' => 'array', 'items' => ['type' => 'string']],
+                        ],
+                        'required' => ['id', 'label', 'type', 'classification', 'required'],
+                    ],
+                ],
+            ],
+            'required' => ['application_id', 'claim_token', 'fields'],
+        ];
     }
 }

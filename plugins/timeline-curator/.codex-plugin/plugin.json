@@ -1,7 +1,7 @@
 {
   "name": "timeline-curator",
-  "version": "0.4.0+codex.20260728080511",
-  "description": "Run a private, feedback-trained, visual-first research loop against your Timeline account.",
+  "version": "0.5.0+codex.20260826090048",
+  "description": "Curate a private research feed and profile-matched jobs, then process only explicitly approved applications.",
   "author": {
     "name": "Peter Ngari",
     "email": "nyashngari@gmail.com",
@@ -12,6 +12,8 @@
   "license": "MIT",
   "keywords": [
     "curation",
+    "jobs",
+    "applications",
     "research",
     "news",
     "feedback"
@@ -19,8 +21,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Timeline Curator",
-    "shortDescription": "Research and update your private, visual-first feed.",
-    "longDescription": "Connects Codex to your independently authenticated Timeline account, learns its explicit feedback policy, researches any configured topic, and publishes verified story clusters with embeddable attributed visuals and adaptive feedback choices.",
+    "shortDescription": "Curate stories and jobs; process approved applications.",
+    "longDescription": "Connects Codex to an independently authenticated Timeline account, researches configured topics and profile-matched jobs, learns from explicit feedback, and processes only job applications the user approves one at a time.",
     "developerName": "Peter Ngari",
     "category": "Productivity",
     "capabilities": [
@@ -29,9 +31,9 @@
       "Web research"
     ],
     "defaultPrompt": [
-      "Run my Timeline curation cycle now.",
+      "Run my combined Timeline curation cycle now.",
       "Explain my current curation policy.",
-      "Research my topics and publish only high-confidence stories."
+      "Process my approved job applications now."
     ],
     "brandColor": "#173F2B",
     "composerIcon": "./assets/timeline-curator-icon.png",

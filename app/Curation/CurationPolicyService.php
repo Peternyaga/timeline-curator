@@ -5,6 +5,9 @@ namespace App\Curation;
 use App\Models\AgentRun;
 use App\Models\Directive;
 use App\Models\FeedbackEvent;
+use App\Models\JobApplication;
+use App\Models\JobFeedbackEvent;
+use App\Models\JobProfile;
 use App\Models\Topic;
 use App\Tenancy\TenantContext;
 use Illuminate\Support\Collection;
@@ -39,12 +42,24 @@ class CurationPolicyService
             ->latest()
             ->limit(100)
             ->get();
+        $jobProfile = JobProfile::query()->with('documents')->first();
+        $jobFeedback = JobFeedbackEvent::query()
+            ->with('jobCuration:id,tenant_id,feedback_tags')
+            ->latest()->limit(100)->get();
 
         $payload = [
             'tenant_id' => $this->context->id(),
             'topics' => $topics->toArray(),
             'directives' => $directives->toArray(),
             'feedback_summary' => $this->summarizeFeedback($feedback),
+            'job_search' => [
+                'enabled' => (bool) ($jobProfile?->enabled),
+                'search_ready' => $jobProfile?->searchReady() ?? false,
+                'application_ready' => $jobProfile?->applicationReady() ?? false,
+                'profile_version' => $jobProfile?->profile_version,
+                'search_preferences' => $jobProfile?->search_preferences ?? [],
+                'feedback_summary' => $this->summarizeJobFeedback($jobFeedback),
+            ],
             'limits' => [
                 'runs_per_day' => $dailyRunLimit,
                 'accepted_clusters_per_run' => 20,
@@ -53,6 +68,10 @@ class CurationPolicyService
                 'summary_points_per_cluster' => ['min' => 1, 'max' => 6],
                 'media_per_cluster' => 3,
                 'feedback_tags_per_cluster' => ['min' => 4, 'max' => 6],
+                'accepted_jobs_per_run' => 20,
+                'sources_per_job' => 5,
+                'job_feedback_tags' => ['min' => 4, 'max' => 6],
+                'application_attempts_per_task' => 5,
             ],
         ];
 
@@ -68,6 +87,10 @@ class CurationPolicyService
                 'runs_remaining_today' => max(0, $dailyRunLimit - $runsUsedToday),
                 'resets_at' => now()->addDay()->startOfDay()->toIso8601String(),
             ],
+            'application_queue' => [
+                'pending' => JobApplication::query()->whereIn('status', ['queued', 'ready_to_resume'])->count(),
+                'action_required' => JobApplication::query()->whereIn('status', ['needs_information', 'needs_manual_action'])->count(),
+            ],
             'context_version' => hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR)),
             'generated_at' => now()->toIso8601String(),
             'instructions' => [
@@ -80,8 +103,17 @@ class CurationPolicyService
                 'Inspect both the originating page and final asset; submit only public HTTPS media that visibly loads, belongs to the story, has clear attribution, and can be embedded without authentication or temporary tokens.',
                 'Prefer an equally strong story with verified media. Use text-only stories only when their editorial value is high and no suitable visual survives verification.',
                 'Generate balanced story-specific feedback tags.',
+                'When job search is enabled, research profile-matched roles separately, preserve original posting dates and deadlines, and submit only current verifiable jobs.',
+                'Complete curation before claiming approved applications. Never infer sensitive or legal answers and never bypass login, CAPTCHA, or access controls.',
             ],
         ];
+    }
+
+    public function assertCurrentContext(string $contextVersion): void
+    {
+        if (! hash_equals($this->context()['context_version'], $contextVersion)) {
+            throw new CurationException('policy_changed', 'The curation policy changed. Retrieve a fresh context and begin a new run.');
+        }
     }
 
     public function dailyRunLimit(): int
@@ -153,6 +185,38 @@ class CurationPolicyService
             'top_tags' => array_slice(array_keys($tagLabels), 0, 8),
             'recent_comments' => $events->whereNotNull('comment')->take(10)->pluck('comment')->values()->all(),
             'half_life_days' => 30,
+        ];
+    }
+
+    private function summarizeJobFeedback(Collection $events): array
+    {
+        if ($events->count() < 3) {
+            return ['sample_size' => $events->count(), 'stable_signal' => false];
+        }
+
+        $signals = [];
+        $labels = [];
+        foreach ($events as $event) {
+            foreach ($event->semantic_tags ?? [] as $tag) {
+                $definition = collect($event->jobCuration?->feedback_tags ?? [])->firstWhere('id', $tag);
+                $signal = is_array($definition) ? ($definition['signal'] ?? null) : null;
+                $label = is_array($definition) ? ($definition['label'] ?? $tag) : $tag;
+                $labels[$label] = ($labels[$label] ?? 0) + 1;
+                if ($signal) {
+                    $signals[$signal] = ($signals[$signal] ?? 0) + 1;
+                }
+            }
+        }
+        arsort($signals);
+        arsort($labels);
+
+        return [
+            'sample_size' => $events->count(), 'stable_signal' => true,
+            'interest_mean' => round($events->avg('interest_score'), 2),
+            'match_mean' => round($events->avg('match_score'), 2),
+            'top_signals' => array_slice(array_keys($signals), 0, 8),
+            'top_tag_labels' => array_slice(array_keys($labels), 0, 8),
+            'recent_comments' => $events->whereNotNull('comment')->take(10)->pluck('comment')->values()->all(),
         ];
     }
 }

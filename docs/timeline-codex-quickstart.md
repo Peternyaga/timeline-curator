@@ -102,13 +102,13 @@ Never share access tokens, authorization codes, session cookies, or the complete
 Start a new Codex task and send:
 
 ```text
-Run my Timeline curation cycle now. Monitor it through completion.
+Run my combined Timeline curation cycle now. Curate configured stories and jobs, then process only applications I approved.
 ```
 
 You can also mention the plugin explicitly:
 
 ```text
-@Timeline Curator Run my Timeline curation cycle now.
+@Timeline Curator Run my combined Timeline curation cycle now.
 ```
 
 Codex will:

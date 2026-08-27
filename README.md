@@ -13,6 +13,8 @@ The application never calls an LLM API to scrape, rank, summarize, or judge cont
 - Tenant-scoped models plus composite tenant foreign keys for defense in depth
 - Story clusters with flexible topic-appropriate summaries, verified sources, and visual-first attributed media
 - Explicit 1–5 relevance and depth feedback, story-specific tags backed by stable learning signals, and comments
+- A private job-search profile, evidence-backed job matches, interest/match feedback, and one-job-at-a-time application approval
+- Evidence-gated Codex application handoffs with encrypted materials, generated missing-information forms, and a tenant-scoped audit trail
 - Public-beta Codex plugin in `plugins/timeline-curator`
 
 ## Local setup
@@ -60,6 +62,8 @@ Recommended schedules are 07:00 and 18:00 in each user's timezone. Each run is a
 - Tenant context is cleared after every request.
 - Tenant-bound inserts overwrite any caller-supplied tenant value.
 - Source pages are not fetched by the backend; only minimal evidence metadata is stored.
+- Personal job-profile data, application snapshots, answers, materials, and evidence are encrypted; profile documents are encrypted on private storage.
+- Timeline never applies by itself. Codex receives application data only after a user approves one specific job, and confirmed submission requires channel-specific evidence.
 - HTTPS, private-address, media-provider, quota, hard-rule, feedback-tag, and idempotency checks run before publication.
 
 The MCP contract and rejection codes are documented in [docs/mcp-contract.md](docs/mcp-contract.md).

@@ -20,7 +20,7 @@ class SetupGuideTest extends TestCase
             ->assertSee('Peternyaga/timeline-curator')
             ->assertSee('codex plugin add timeline-curator@vumbua-labs')
             ->assertSee('codex mcp login timeline')
-            ->assertSee('@Timeline Curator Run my Timeline curation cycle now.')
+            ->assertSee('@Timeline Curator Run my combined Timeline curation cycle now.')
             ->assertSee('Schedule the same instruction')
             ->assertSee(route('register'));
     }

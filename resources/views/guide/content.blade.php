@@ -95,7 +95,7 @@ codex plugin add timeline-curator@vumbua-labs</code></pre>
                 <p class="eyebrow">BRING THE FEED TO LIFE</p>
                 <h2>Publish your first curation</h2>
                 <p>In a new Codex task, send this exact instruction:</p>
-                <blockquote>@Timeline Curator Run my Timeline curation cycle now. Monitor it through completion and publish the results to Timeline.</blockquote>
+                <blockquote>@Timeline Curator Run my combined Timeline curation cycle now. Curate configured stories and jobs, then process only applications I approved.</blockquote>
                 <p>Codex will retrieve your policy, research broadly, verify evidence and media, and publish suitable stories. A valid run may return no stories when the evidence is weak.</p>
                 @auth<a class="button compact secondary" href="{{ route('timeline') }}">Check my Timeline</a>@endauth
             </div>
