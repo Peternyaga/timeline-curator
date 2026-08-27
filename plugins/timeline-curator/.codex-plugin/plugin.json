@@ -1,6 +1,6 @@
 {
   "name": "timeline-curator",
-  "version": "0.5.0+codex.20260826090048",
+  "version": "0.5.0+codex.20260827100537",
   "description": "Curate a private research feed and profile-matched jobs, then process only explicitly approved applications.",
   "author": {
     "name": "Peter Ngari",
