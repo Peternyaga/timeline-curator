@@ -208,6 +208,8 @@ class TimelineInteractionTest extends TestCase
         $this->actingAs($user)->get('/timeline')
             ->assertOk()
             ->assertSee('src="https://images.example.org/story.jpg"', false)
+            ->assertSee('loading="eager"', false)
+            ->assertSee('fetchpriority="high"', false)
             ->assertSee('class="media-item is-hero"', false)
             ->assertSee('class="story-media-gallery"', false)
             ->assertSee('data-video-provider="youtube"', false)

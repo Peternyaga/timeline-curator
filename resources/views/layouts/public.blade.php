@@ -10,8 +10,8 @@
 </head>
 <body class="public-share-page">
     <header class="public-topbar">
-        <a href="{{ route('home') }}" class="brand">TIMELINE<span>CURATOR</span></a>
-        <a class="button compact" href="{{ route('register') }}">Build your timeline</a>
+        <a href="{{ route('home') }}" class="brand"><span>TIMELINE</span> CURATOR</a>
+        <a class="button compact" href="{{ route('register') }}">Create your Timeline</a>
     </header>
 
     @yield('content')

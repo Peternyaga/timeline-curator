@@ -66,10 +66,30 @@ HTML);
             abort(409, 'A deployment is already running.');
         }
 
+        $optimizeProduction = app()->environment('production');
+        $enteredMaintenance = false;
+
         try {
+            if ($optimizeProduction) {
+                Artisan::call('optimize:clear');
+                if (! app()->isDownForMaintenance()) {
+                    Artisan::call('down', ['--retry' => 60]);
+                    $enteredMaintenance = true;
+                }
+            }
+
             Artisan::call('migrate', ['--force' => true]);
             if (! $isUpdate) {
                 $this->setExistingOwnerPassword($request);
+            }
+            if ($optimizeProduction) {
+                // Do not rebuild caches inside this request. An update request can
+                // itself be booted from the previous release's cached route table,
+                // which would immediately write those stale routes back to disk.
+                // With caches cleared, the next request boots from the new files.
+                if (function_exists('opcache_reset')) {
+                    @opcache_reset();
+                }
             }
             File::put($this->completedPath(), json_encode([
                 'installed_at' => now()->toIso8601String(),
@@ -98,6 +118,9 @@ HTML);
 
             return $this->html('<h1>Installation failed</h1><p>Check the database values and the server error log, then try again.</p>', 500);
         } finally {
+            if ($enteredMaintenance) {
+                Artisan::call('up');
+            }
             fclose($handle);
             File::delete($inProgressPath);
         }

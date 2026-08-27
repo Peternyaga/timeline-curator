@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class OAuthGrant extends Model
 {
@@ -37,6 +38,12 @@ class OAuthGrant extends Model
     public function accessTokens()
     {
         return $this->hasMany(OAuthAccessToken::class, 'oauth_grant_id');
+    }
+
+    public function lastUsedAccessToken(): HasOne
+    {
+        return $this->hasOne(OAuthAccessToken::class, 'oauth_grant_id')
+            ->ofMany('last_used_at', 'max');
     }
 
     public function refreshTokens()

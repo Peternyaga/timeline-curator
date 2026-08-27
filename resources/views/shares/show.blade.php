@@ -46,11 +46,11 @@
 
         @if(! empty($snapshot['media']))
             <div class="story-media public-story-media" aria-label="Story media">
-                @include('partials.story-media-item', ['media' => (object) $snapshot['media'][0], 'hero' => true])
+                @include('partials.story-media-item', ['media' => (object) $snapshot['media'][0], 'hero' => true, 'priority' => true])
                 @if(count($snapshot['media']) > 1)
                     <div class="story-media-gallery">
                         @foreach(array_slice($snapshot['media'], 1) as $media)
-                            @include('partials.story-media-item', ['media' => (object) $media, 'hero' => false])
+                            @include('partials.story-media-item', ['media' => (object) $media, 'hero' => false, 'priority' => false])
                         @endforeach
                     </div>
                 @endif
@@ -117,9 +117,9 @@
     </article>
 
     <aside class="public-story-cta">
-        <p class="eyebrow">YOUR OWN SIGNAL</p>
-        <h2>Build a timeline around what matters to you.</h2>
-        <p>Choose your topics and let your private curator bring back verified stories with useful context.</p>
+        <p class="eyebrow">CREATE YOUR OWN TIMELINE</p>
+        <h2>Follow the topics you choose.</h2>
+        <p>Set the coverage and let your Codex curator return verified stories with useful context.</p>
         <a class="button" href="{{ route('register') }}">Create your Timeline</a>
     </aside>
 </main>

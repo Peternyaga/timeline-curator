@@ -19,21 +19,21 @@ class ProductUpdateTest extends TestCase
 
         $this->actingAs($user)->get('/timeline')
             ->assertOk()
-            ->assertSee('More reliable scheduled curation')
+            ->assertSee('Your job search companion')
             ->assertSee('Updates');
 
-        $this->actingAs($user)->post(route('updates.read', '2026-07-durable-connections'))
+        $this->actingAs($user)->post(route('updates.read', '2026-08-job-search-companion'))
             ->assertRedirect()
             ->assertSessionHas('status');
 
         $this->assertDatabaseHas('product_update_reads', [
             'user_id' => $user->id,
-            'update_id' => '2026-07-durable-connections',
+            'update_id' => '2026-08-job-search-companion',
         ]);
 
         $this->actingAs($user)->get('/timeline')
             ->assertOk()
-            ->assertDontSee('More reliable scheduled curation');
+            ->assertDontSee('Your job search companion');
     }
 
     public function test_update_reads_are_user_scoped_and_all_updates_can_be_marked_read(): void

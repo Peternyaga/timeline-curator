@@ -32,7 +32,7 @@ Open the installer URL, submit the token from `dist/curator-vumbualabs-deploymen
 
 For the existing production database, the migration preserves every tenant, topic, directive, story, and feedback record. Enter the existing owner's email and a new 12+ character password in the install form; the installer updates that account in place. Leave those optional fields blank for a fresh database, then use `/register`.
 
-The durable-authentication migration preserves currently valid refresh credentials and converts them to rotating, until-revoked grants. Credentials that expired before deployment require one final OAuth login. The update also adds user-scoped product-update read state.
+The durable-authentication migration preserves currently valid refresh credentials and converts them to reusable, until-revoked grants. Credentials that expired before deployment require one final OAuth login. The update also adds user-scoped product-update read state.
 
 ## 4. Verify
 
@@ -55,5 +55,9 @@ Build an update archive that deliberately excludes `.env`:
 Upload `dist/curator-vumbualabs-update.zip` to `/domains/curator.vumbualabs.com/app` and extract it over the existing application. The archive includes production dependencies and compiled frontend assets but cannot overwrite the production database credentials, application key, sessions, or OAuth token configuration because it contains no `.env` file.
 
 After extraction, open `https://curator.vumbualabs.com/deployment/install` and enter the one-time token from `dist/curator-vumbualabs-update-token.txt`. The update package stores only the token hash outside the public document root. A successful migration deletes that hash automatically, closes the update endpoint, and preserves the existing `.env`, tenants, users, OAuth credentials, stories, and feedback.
+
+The installer briefly enables Laravel maintenance mode, clears stale framework caches, runs migrations, rebuilds the production config/route/event/view caches against the server's preserved `.env`, and resets OPcache when the host permits it.
+
+For best production performance, enable PHP OPcache in DirectAdmin with at least 128 MB, about 20,000 cached scripts, and 16 MB of interned strings. Keep JIT disabled for this request-oriented application. On shared hosting, retain timestamp validation with a short revalidation interval unless the deployment process can reliably reload PHP-FPM.
 
 If DirectAdmin Terminal is available, `php artisan migrate --force` from the application directory is an equivalent migration path. Do not activate schema-dependent application code without completing one of these migration steps.

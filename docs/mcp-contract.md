@@ -4,13 +4,13 @@ All tools authenticate with a first-party opaque Timeline bearer token issued th
 
 ## `get_curation_context`
 
-Requires `read:curation-context`. Version 0.4 clients provide optional `plugin_version`. The response returns active topics, unexpired directives, recency-weighted explicit feedback signals, deterministic limits, research instructions, plugin compatibility status, an update command, and a SHA-256 `context_version`.
+Requires `read:curation-context`. Clients provide optional `plugin_version`; version 0.5 clients with `read:job-search-context` also receive non-sensitive job-search context. The response returns active topics, unexpired directives, recency-weighted explicit feedback signals, deterministic limits, research instructions, plugin compatibility status, an update command, and a SHA-256 `context_version`. Users can set their tenant-owned daily run limit from 1–10 on the Policy page; new and existing tenants default to 10 runs per day.
 
 ## `begin_curation_run`
 
 Requires `write:curation-runs`.
 
-Input: `context_version`, 1–20 `exact_queries`, and optional `skill_version`. The context must still be current. A tenant may start at most three runs per UTC application day.
+Input: `context_version`, 0–20 story `exact_queries`, 0–20 `job_queries`, and optional `skill_version`. At least one query group is required and the context must still be current. A tenant may start only the configured number of runs per application day.
 
 ## `submit_story_batch`
 
@@ -32,3 +32,21 @@ The response separates `accepted` and `rejected` items. Rejections use stable co
 Requires `write:curation-runs`. Final status is `completed`, `completed_empty`, or `failed`.
 
 Limits: 20 accepted clusters and 50 sources per run, five active topics, five sources per cluster, three media items per cluster, and 2,000 stored clusters per tenant.
+
+## Job curation and application tools (version 0.5)
+
+`get_curation_context` also returns an enabled job profile's non-sensitive search preferences, search/application readiness, job-feedback summary, job limits, and application queue counts. Contact, career, reusable-answer, and document data are withheld until the user approves one job.
+
+### `submit_job_batch`
+
+Requires `write:job-batches`. Input is an active `run_id`, immutable `context_version`, and one to ten job matches. Each match includes current listing/application destinations, employer and role facts, dates when known, concise requirements and fit analysis, one to five inspected HTTPS sources with exactly one primary, and four to six balanced job-specific feedback choices. Expired, duplicate, private-address, unverifiable, or malformed matches are rejected.
+
+### Application queue
+
+- `claim_next_application` requires `read:approved-applications`, a unique `client_attempt_id`, and atomically leases one approved application for 30 minutes.
+- `get_profile_document` returns one encrypted private document that was present in that approved snapshot.
+- `save_application_materials` requires `write:application-progress` and retains exact generated materials with approved profile fact paths.
+- `request_application_information` pauses work and creates a safe server-rendered questionnaire. Arbitrary HTML/JavaScript, credentials, CAPTCHA, payment data, and full identity numbers are rejected.
+- `record_application_outcome` records `submitted`, `attempted_unconfirmed`, `needs_manual_action`, or `failed`. `submitted` requires a web confirmation URL/time or email recipient/time/provider message ID.
+
+OAuth 0.5 adds `read:job-search-context`, `write:job-batches`, `read:approved-applications`, and `write:application-progress`. Existing 0.4 story-only clients remain supported with their original scopes.

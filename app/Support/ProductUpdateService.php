@@ -5,16 +5,21 @@ namespace App\Support;
 use App\Models\ProductUpdateRead;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class ProductUpdateService
 {
     /** @return Collection<int, array<string, mixed>> */
     public function allFor(User $user): Collection
     {
-        $readIds = ProductUpdateRead::query()
-            ->where('user_id', $user->id)
-            ->pluck('update_id')
-            ->all();
+        $readIds = Cache::remember(
+            $this->readCacheKey($user),
+            now()->addMinutes(5),
+            fn (): array => ProductUpdateRead::query()
+                ->where('user_id', $user->id)
+                ->pluck('update_id')
+                ->all(),
+        );
 
         return collect(config('product_updates.items', []))
             ->map(fn (array $update): array => [
@@ -44,12 +49,35 @@ class ProductUpdateService
             ['user_id' => $user->id, 'update_id' => $updateId],
             ['read_at' => now()],
         );
+        Cache::forget($this->readCacheKey($user));
     }
 
     public function markAllRead(User $user): void
     {
-        foreach (config('product_updates.items', []) as $update) {
-            $this->markRead($user, $update['id']);
+        $timestamp = now();
+        $rows = collect(config('product_updates.items', []))
+            ->map(fn (array $update): array => [
+                'user_id' => $user->id,
+                'update_id' => $update['id'],
+                'read_at' => $timestamp,
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ])
+            ->all();
+
+        if ($rows !== []) {
+            ProductUpdateRead::query()->upsert(
+                $rows,
+                ['user_id', 'update_id'],
+                ['read_at', 'updated_at'],
+            );
         }
+
+        Cache::forget($this->readCacheKey($user));
+    }
+
+    private function readCacheKey(User $user): string
+    {
+        return 'product-updates.read.'.$user->getKey();
     }
 }

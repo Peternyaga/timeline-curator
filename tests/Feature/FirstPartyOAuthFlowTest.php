@@ -23,7 +23,8 @@ class FirstPartyOAuthFlowTest extends TestCase
             'password' => 'correct-horse-battery-staple',
             'password_confirmation' => 'correct-horse-battery-staple',
             'timezone' => 'Africa/Nairobi',
-        ])->assertRedirect('/timeline');
+        ])->assertRedirect('/guide')
+            ->assertSessionHas('status');
 
         $user = User::query()->firstOrFail();
         $this->assertAuthenticatedAs($user);
@@ -94,7 +95,32 @@ class FirstPartyOAuthFlowTest extends TestCase
             ->assertJsonPath('error', 'invalid_grant');
     }
 
-    public function test_refresh_tokens_rotate_without_expiring_until_the_grant_is_revoked(): void
+    public function test_story_only_client_sees_only_the_permissions_it_requests(): void
+    {
+        $client = $this->postJson('/oauth/register', [
+            'client_name' => 'Legacy Codex',
+            'redirect_uris' => ['http://127.0.0.1:49152/callback'],
+            'token_endpoint_auth_method' => 'none',
+        ])->json();
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/oauth/authorize?'.http_build_query([
+            'response_type' => 'code',
+            'client_id' => $client['client_id'],
+            'redirect_uri' => $client['redirect_uris'][0],
+            'state' => 'legacy-state',
+            'code_challenge' => str_repeat('a', 43),
+            'code_challenge_method' => 'S256',
+            'scope' => 'read:curation-context write:curation-runs write:story-batches',
+        ]));
+
+        $response->assertOk()
+            ->assertSee('Publish evidence-backed stories')
+            ->assertDontSee('job-search preferences')
+            ->assertDontSee('application profile');
+    }
+
+    public function test_refresh_tokens_remain_reusable_until_the_grant_is_revoked(): void
     {
         config()->set('oauth.refresh_token_until_revoked', true);
         config()->set('oauth.refresh_token_ttl_days', 30);
@@ -128,10 +154,10 @@ class FirstPartyOAuthFlowTest extends TestCase
         ])->assertOk()
             ->assertJsonStructure(['access_token', 'refresh_token', 'expires_in', 'scope']);
 
-        $this->assertNotSame('durable-refresh-token', $renewed->json('refresh_token'));
-        $this->assertNotNull(OAuthRefreshToken::query()->oldest()->firstOrFail()->revoked_at);
-        $this->assertNull(OAuthRefreshToken::query()->latest()->firstOrFail()->expires_at);
-        $this->assertSame(2, OAuthRefreshToken::query()->count());
+        $this->assertSame('durable-refresh-token', $renewed->json('refresh_token'));
+        $this->assertNull(OAuthRefreshToken::query()->firstOrFail()->revoked_at);
+        $this->assertNull(OAuthRefreshToken::query()->firstOrFail()->expires_at);
+        $this->assertSame(1, OAuthRefreshToken::query()->count());
         $this->assertSame(1, OAuthAccessToken::query()->count());
 
         $this->call('OPTIONS', '/mcp', server: [
@@ -142,12 +168,15 @@ class FirstPartyOAuthFlowTest extends TestCase
             'grant_type' => 'refresh_token',
             'client_id' => $client->client_id,
             'refresh_token' => 'durable-refresh-token',
-        ])->assertStatus(400)->assertJsonPath('error', 'invalid_grant');
+        ])->assertOk()
+            ->assertJsonPath('refresh_token', 'durable-refresh-token');
 
-        $this->assertNotNull($grant->fresh()->revoked_at);
+        $this->assertNull($grant->fresh()->revoked_at);
+        $this->assertSame(1, OAuthRefreshToken::query()->count());
+        $this->assertSame(2, OAuthAccessToken::query()->count());
         $this->call('OPTIONS', '/mcp', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$renewed->json('access_token'),
-        ])->assertUnauthorized();
+        ])->assertNoContent();
     }
 
     public function test_pkce_mismatch_does_not_consume_the_code(): void

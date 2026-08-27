@@ -14,7 +14,7 @@ class ConnectionController extends Controller
     {
         $grants = OAuthGrant::query()
             ->where('user_id', $request->user()->id)
-            ->with(['client', 'accessTokens' => fn ($query) => $query->latest()])
+            ->with(['client', 'lastUsedAccessToken'])
             ->latest()
             ->get();
 

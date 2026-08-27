@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -30,6 +31,26 @@ class StoryCluster extends Model
             'feedback_tags' => 'array',
             'published_at' => 'datetime',
         ];
+    }
+
+    public function scopeForTimeline(Builder $query): Builder
+    {
+        return $query
+            ->select([
+                'id',
+                'tenant_id',
+                'title',
+                'technical_bullets',
+                'summary_points',
+                'why_it_matters',
+                'feedback_tags',
+                'published_at',
+            ])
+            ->with([
+                'sources:id,tenant_id,story_cluster_id,url,domain,role',
+                'media:id,tenant_id,story_cluster_id,media_type,url,provider,provider_id,thumbnail_url,caption,alt_text,credit,source_url,position',
+                'feedback:id,tenant_id,story_cluster_id,relevance_score,depth_score,semantic_tags,comment',
+            ]);
     }
 
     public function sources()

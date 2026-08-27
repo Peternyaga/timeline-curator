@@ -17,7 +17,7 @@
 
     <div class="connection-list">
         @forelse($grants as $grant)
-            @php($lastUsed = $grant->accessTokens->pluck('last_used_at')->filter()->sortDesc()->first())
+            @php($lastUsed = $grant->lastUsedAccessToken?->last_used_at)
             <article class="connection-card">
                 <div class="connection-heading">
                     <div>

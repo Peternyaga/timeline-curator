@@ -1,9 +1,18 @@
 <?php
 
 return [
-    'current_plugin_version' => '0.4.0',
+    'current_plugin_version' => '0.5.0',
     'minimum_plugin_version' => '0.4.0',
     'items' => [
+        [
+            'id' => '2026-08-job-search-companion',
+            'version' => '0.5.0',
+            'published_at' => '2026-08-26T00:00:00+03:00',
+            'title' => 'Your job search companion',
+            'summary' => 'Create a private job profile, rate verified matches, and approve one application at a time for Codex to process.',
+            'action_label' => 'Set up Jobs',
+            'action_route' => 'jobs.profile',
+        ],
         [
             'id' => '2026-07-durable-connections',
             'version' => '0.4.0',

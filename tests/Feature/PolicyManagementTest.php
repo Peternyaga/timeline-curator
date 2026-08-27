@@ -25,7 +25,7 @@ class PolicyManagementTest extends TestCase
         $this->actingAs($user)
             ->get('/policy')
             ->assertOk()
-            ->assertSee('Train your task')
+            ->assertSee('Choose what Timeline should follow')
             ->assertSee('Add a topic')
             ->assertSee('Agent directives')
             ->assertSee('Browse popular topics')
@@ -34,7 +34,7 @@ class PolicyManagementTest extends TestCase
             ->assertSee('Prefer original sources')
             ->assertSee('data-preset-form="topic"', false)
             ->assertSee('data-preset-form="directive"', false)
-            ->assertDontSee('Your private signal');
+            ->assertDontSee('Stories selected for your topics');
     }
 
     public function test_new_user_catalogues_are_open_and_preset_values_use_existing_endpoints(): void

@@ -23,7 +23,7 @@ The access-token row points to a Timeline user. The server loads that user's ten
 - Authorization codes are stored as SHA-256 hashes, expire after five minutes, and can be consumed once.
 - Access and refresh tokens are opaque random values stored only as SHA-256 hashes.
 - Access tokens expire after 60 minutes.
-- Refresh tokens rotate on every use and remain valid until the user revokes the underlying authorization grant. Reuse of a rotated refresh token revokes the full grant.
+- Refresh credentials are reusable and remain valid until the user revokes the underlying authorization grant. This avoids refresh races between scheduled and interactive Codex sessions.
 - Users can inspect last contact and renewal times or revoke an installation from `/connections`.
 - Only the three Timeline MCP scopes can be requested.
 
