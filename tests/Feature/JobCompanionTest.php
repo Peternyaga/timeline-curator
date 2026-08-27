@@ -18,11 +18,31 @@ use App\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class JobCompanionTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_job_migration_resumes_after_a_partial_ddl_failure(): void
+    {
+        foreach ([
+            'application_events', 'application_questionnaires', 'application_materials',
+            'job_applications', 'job_feedback_events', 'job_sources', 'job_curations',
+        ] as $table) {
+            Schema::dropIfExists($table);
+        }
+
+        $migration = require database_path('migrations/2026_08_26_000900_create_job_companion_tables.php');
+        $migration->up();
+
+        $this->assertTrue(Schema::hasColumns('agent_runs', ['job_queries', 'job_accepted_count', 'job_rejected_count']));
+        $this->assertTrue(Schema::hasTable('job_profiles'));
+        $this->assertTrue(Schema::hasTable('job_profile_documents'));
+        $this->assertTrue(Schema::hasTable('job_curations'));
+        $this->assertTrue(Schema::hasTable('application_events'));
+    }
 
     public function test_profile_is_guided_encrypted_and_has_separate_readiness_states(): void
     {
