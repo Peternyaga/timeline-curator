@@ -120,10 +120,11 @@ class FirstPartyOAuthFlowTest extends TestCase
             ->assertDontSee('application profile');
     }
 
-    public function test_refresh_tokens_remain_reusable_until_the_grant_is_revoked(): void
+    public function test_refresh_tokens_survive_long_idle_periods_until_the_grant_is_revoked(): void
     {
-        config()->set('oauth.refresh_token_until_revoked', true);
-        config()->set('oauth.refresh_token_ttl_days', 30);
+        // Legacy deployment settings must not shorten scheduled-task authorization.
+        config()->set('oauth.refresh_token_until_revoked', false);
+        config()->set('oauth.refresh_token_ttl_days', 1);
 
         $user = User::factory()->create();
         $client = OAuthClient::query()->create([
@@ -146,6 +147,8 @@ class FirstPartyOAuthFlowTest extends TestCase
             'scopes' => config('oauth.scopes'),
             'expires_at' => null,
         ]);
+
+        $this->travel(400)->days();
 
         $renewed = $this->post('/oauth/token', [
             'grant_type' => 'refresh_token',

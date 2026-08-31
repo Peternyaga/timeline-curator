@@ -3,7 +3,7 @@
     "timeline": {
       "url": "https://curator.vumbualabs.com/mcp",
       "auth": "oauth",
-      "required": true,
+      "required": false,
       "scopes": [
         "read:curation-context",
         "write:curation-runs",

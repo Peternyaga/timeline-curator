@@ -140,8 +140,6 @@ class OAuthTokenController extends Controller
         $access = TokenFactory::issue('tl_at_');
         $refresh = $existingRefreshToken ?? TokenFactory::issue('tl_rt_');
         $accessTtl = (int) config('oauth.access_token_ttl_minutes');
-        $refreshTtl = (int) config('oauth.refresh_token_ttl_days');
-        $refreshUntilRevoked = (bool) config('oauth.refresh_token_until_revoked');
 
         OAuthAccessToken::query()->create([
             'token_hash' => TokenFactory::hash($access),
@@ -158,9 +156,7 @@ class OAuthTokenController extends Controller
                 'oauth_grant_id' => $grant->id,
                 'user_id' => $userId,
                 'scopes' => $scopes,
-                'expires_at' => ! $refreshUntilRevoked && $refreshTtl > 0
-                    ? now()->addDays($refreshTtl)
-                    : null,
+                'expires_at' => null,
             ]);
         }
 

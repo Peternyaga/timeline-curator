@@ -1,6 +1,6 @@
 # Combined Timeline curation schedule prompt
 
-Use the Timeline Curator skill to run one complete combined cycle for my authenticated Timeline account. Retrieve context with plugin version 0.5.0 and verify quota before research. If Timeline is unavailable or authentication fails, stop and report “Timeline reauthentication required” with `codex mcp login timeline`.
+Use the Timeline Curator skill to run one complete combined cycle for my authenticated Timeline account. Retrieve context with plugin version 0.5.1 and verify quota before research. If Timeline is unavailable or authentication fails, stop this Timeline cycle and report “Timeline reauthentication required” with `codex mcp login timeline`; do not treat the failure as an empty curation result or as a reason to block unrelated Codex tasks.
 
 Create separate queries for active story topics and for an enabled, search-ready job profile. Begin one run, research broadly, verify sources and dates, publish only strong story clusters and current profile-matched job listings, and complete the run even when either side is empty. Preserve unknown posting dates, deadlines, salaries, and eligibility as unknown rather than guessing. Never bypass access controls or use an application-side LLM API.
 
