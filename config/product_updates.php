@@ -1,9 +1,18 @@
 <?php
 
 return [
-    'current_plugin_version' => '0.5.0',
+    'current_plugin_version' => '0.5.1',
     'minimum_plugin_version' => '0.4.0',
     'items' => [
+        [
+            'id' => '2026-08-scheduled-auth-resilience',
+            'version' => '0.5.1',
+            'published_at' => '2026-08-31T00:00:00+03:00',
+            'title' => 'Reliable scheduled connections',
+            'summary' => 'Timeline authorization now remains renewable until you revoke it, while Timeline outages no longer prevent unrelated Codex tasks from starting.',
+            'action_label' => 'Review your connections',
+            'action_route' => 'connections.index',
+        ],
         [
             'id' => '2026-08-job-search-companion',
             'version' => '0.5.0',
