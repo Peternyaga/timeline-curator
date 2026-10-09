@@ -1,0 +1,19 @@
+{
+  "name": "sales-workspace-hosted",
+  "version": "0.3.0",
+  "description": "Read and update your hosted Fieldwork sales workspace through an account-linked MCP connection.",
+  "author": {"name": "Vumbua Labs"},
+  "interface": {
+    "displayName": "Fieldwork Reach",
+    "shortDescription": "Manage leads and internal follow-ups in Fieldwork.",
+    "longDescription": "Connect your Fieldwork account to read and update your leads, notes, assignments, and internal follow-up schedule.",
+    "developerName": "Vumbua Labs",
+    "category": "Productivity",
+    "capabilities": ["Read leads", "Update leads", "Manage internal follow-ups"],
+    "websiteURL": "https://reach.vumbualabs.com",
+    "defaultPrompt": "Connect my Fieldwork account, then show my current follow-ups."
+  },
+  "mcpServers": "./.mcp.json",
+  "skills": "./skills/",
+  "extensions": {"com.openai": {"onboardingSkill": "./skills/setup/SKILL.md"}}
+}
