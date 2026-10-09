@@ -187,12 +187,12 @@ class JobCompanionTest extends TestCase
             'canonical_url' => 'https://jobs.example.com/product-manager',
             'application_url' => 'https://jobs.example.com/product-manager/apply', 'application_channel' => 'web',
             'location' => 'Nairobi, Kenya', 'workplace_type' => 'hybrid', 'employment_type' => 'full-time',
-            'posted_at' => '2026-08-25T09:00:00+03:00', 'deadline_at' => '2026-09-30T23:59:59+03:00',
+            'posted_at' => now()->subDay()->toIso8601String(), 'deadline_at' => now()->addMonth()->toIso8601String(),
             'summary_points' => ['Lead a product portfolio.'], 'requirements' => ['Product experience.'],
             'match_points' => ['Matches product leadership experience.'], 'gaps' => ['Confirm sector preference.'],
             'sources' => [[
                 'title' => 'Original listing', 'url' => 'https://jobs.example.com/product-manager',
-                'role' => 'primary', 'published_at' => '2026-08-25T09:00:00+03:00',
+                'role' => 'primary', 'published_at' => now()->subDay()->toIso8601String(),
             ]],
             'feedback_tags' => [
                 ['id' => 'strong-fit', 'label' => 'Strong role fit', 'signal' => 'more_like_this'],
