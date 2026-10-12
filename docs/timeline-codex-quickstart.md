@@ -46,7 +46,7 @@ Timeline will not invent a generic feed when there are no active topics.
 4. Enter:
 
    ```text
-   Peternyaga/timeline-curator
+   Peternyaga/vumbua-labs-plugins
    ```
 
 5. Open the Vumbua Labs marketplace.
@@ -60,14 +60,14 @@ If your version exposes the command menu instead, enter `/plugins`, add or open 
 Open a terminal and run:
 
 ```bash
-codex plugin marketplace add Peternyaga/timeline-curator
+codex plugin marketplace add Peternyaga/vumbua-labs-plugins
 codex plugin add timeline-curator@vumbua-labs
 ```
 
 On Windows PowerShell, if `codex` is not recognized, use:
 
 ```powershell
-& "$env:APPDATA\npm\codex.cmd" plugin marketplace add Peternyaga/timeline-curator
+& "$env:APPDATA\npm\codex.cmd" plugin marketplace add Peternyaga/vumbua-labs-plugins
 & "$env:APPDATA\npm\codex.cmd" plugin add timeline-curator@vumbua-labs
 ```
 
@@ -339,3 +339,15 @@ Report problems at [github.com/Peternyaga/timeline-curator/issues](https://githu
 - Timeline: [curator.vumbualabs.com](https://curator.vumbualabs.com)
 - Source and issue tracker: [github.com/Peternyaga/timeline-curator](https://github.com/Peternyaga/timeline-curator)
 - Codex plugin guidance: [learn.chatgpt.com/docs/plugins](https://learn.chatgpt.com/docs/plugins)
+
+## Existing marketplace registration
+
+If Vumbua Labs was registered from the old product repository, replace only the source registration:
+
+```powershell
+codex plugin marketplace remove vumbua-labs
+codex plugin marketplace add Peternyaga/vumbua-labs-plugins --ref main
+codex plugin add timeline-curator@vumbua-labs
+```
+
+Keep the installed plugin and OAuth connection. Restart desktop and verify a read in a new chat. The catalog is now maintained in the shared repository.

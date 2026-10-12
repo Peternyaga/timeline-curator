@@ -15,7 +15,7 @@ Every tester authenticates independently. Timeline resolves the bearer token to 
 In Codex Desktop, open **Settings → Plugins → Marketplaces**, choose **Add marketplace**, and enter:
 
 ```text
-Peternyaga/timeline-curator
+Peternyaga/vumbua-labs-plugins
 ```
 
 If the marketplace screen is unavailable, use the CLI.
@@ -25,21 +25,21 @@ If the marketplace screen is unavailable, use the CLI.
 If `codex` is already on your `PATH`:
 
 ```powershell
-codex plugin marketplace add Peternyaga/timeline-curator
+codex plugin marketplace add Peternyaga/vumbua-labs-plugins
 codex plugin add timeline-curator@vumbua-labs
 ```
 
 For a standard npm installation where PowerShell cannot find `codex`:
 
 ```powershell
-& "$env:APPDATA\npm\codex.cmd" plugin marketplace add Peternyaga/timeline-curator
+& "$env:APPDATA\npm\codex.cmd" plugin marketplace add Peternyaga/vumbua-labs-plugins
 & "$env:APPDATA\npm\codex.cmd" plugin add timeline-curator@vumbua-labs
 ```
 
 ### macOS or Linux
 
 ```bash
-codex plugin marketplace add Peternyaga/timeline-curator
+codex plugin marketplace add Peternyaga/vumbua-labs-plugins
 codex plugin add timeline-curator@vumbua-labs
 ```
 
@@ -137,3 +137,15 @@ Open a [GitHub issue](https://github.com/Peternyaga/timeline-curator/issues) wit
 - what you expected to happen
 
 Never include passwords, bearer tokens, authorization codes, session cookies, or full OAuth callback URLs.
+
+## Existing marketplace registration
+
+If Vumbua Labs was registered from the old product repository, replace only the source registration:
+
+```powershell
+codex plugin marketplace remove vumbua-labs
+codex plugin marketplace add Peternyaga/vumbua-labs-plugins --ref main
+codex plugin add timeline-curator@vumbua-labs
+```
+
+Keep the installed plugin and OAuth connection. Restart desktop and verify a read in a new chat. The catalog is now maintained in the shared repository.
