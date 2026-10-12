@@ -15,7 +15,7 @@ The application never calls an LLM API to scrape, rank, summarize, or judge cont
 - Explicit 1–5 relevance and depth feedback, story-specific tags backed by stable learning signals, and comments
 - A private job-search profile, evidence-backed job matches, interest/match feedback, and one-job-at-a-time application approval
 - Evidence-gated Codex application handoffs with encrypted materials, generated missing-information forms, and a tenant-scoped audit trail
-- Public-beta Codex plugin in `plugins/timeline-curator`
+- Public-beta Codex plugins in `plugins/timeline-curator` and `plugins/sales-workspace-hosted`
 
 ## Local setup
 
@@ -46,6 +46,8 @@ Some Windows PHP distributions omit PDO SQLite. In that case enable `pdo_sqlite`
 The public-beta plugin is configured for `https://curator.vumbualabs.com/mcp`. External testers can add the GitHub marketplace, install `timeline-curator`, authenticate its MCP server as their own Timeline user, and run or schedule independent curation cycles.
 
 Follow the [external tester setup guide](docs/external-testing.md) for exact Codex Desktop, PowerShell, and shell commands. Personal schedules can use the prompt in `plugins/timeline-curator/assets/scheduled-task-prompt.md`.
+
+The same Vumbua Labs marketplace also offers **Fieldwork Reach**, an independently hosted sales workspace connection. Follow the [Fieldwork Reach tester guide](docs/fieldwork-reach-testing.md) for account access, installation, permissions, and its optional Windows background worker. Reach's service code and database are maintained separately from this Timeline application.
 
 For DirectAdmin hosting without SSH, build the complete upload ZIP locally with `scripts/build-directadmin-release.ps1`. It includes production dependencies, compiled assets, generated application secrets, and the disabled-by-default one-time database installer.
 
